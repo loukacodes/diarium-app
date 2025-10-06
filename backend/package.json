@@ -1,0 +1,17 @@
+{
+  "name": "diarium-backend",
+  "version": "1.0.0",
+  "description": "Backend API for Diarium diary app",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "test": "jest",
+    "test:watch": "jest --watch"
+  },
+  "keywords": ["diary", "mood", "ai", "api"],
+  "author": "Louka Tran",
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {}
+}

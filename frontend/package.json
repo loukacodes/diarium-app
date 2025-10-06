@@ -1,0 +1,17 @@
+{
+  "name": "diarium-frontend",
+  "version": "1.0.0",
+  "description": "React Native frontend for Diarium diary app",
+  "main": "index.js",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web"
+  },
+  "keywords": ["react-native", "expo", "diary", "mood"],
+  "author": "Louka Tran",
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {}
+}

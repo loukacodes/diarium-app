@@ -34,3 +34,52 @@ Diarium is a cross-platform diary app that helps users reflect on their daily li
 ---
 
 ## 📂 Project Structure
+
+```
+diarium-app/
+├── backend/                 # Node.js/Express API server
+│   ├── src/
+│   │   ├── controllers/    # Route controllers
+│   │   ├── models/         # Database models
+│   │   ├── routes/         # API routes
+│   │   ├── middleware/     # Custom middleware
+│   │   ├── services/       # Business logic
+│   │   ├── utils/          # Utility functions
+│   │   └── server.js       # Main server file
+│   ├── tests/              # Backend tests
+│   └── package.json        # Backend dependencies
+├── frontend/               # React Native mobile app
+│   ├── src/
+│   │   ├── components/     # Reusable UI components
+│   │   ├── screens/        # App screens
+│   │   ├── navigation/     # Navigation setup
+│   │   ├── services/       # API services
+│   │   ├── utils/          # Utility functions
+│   │   └── assets/         # Images, fonts, etc.
+│   ├── App.js              # Main app component
+│   ├── app.json            # Expo configuration
+│   └── package.json        # Frontend dependencies
+└── README.md               # Project documentation
+```
+
+## 🚀 Getting Started
+
+### Prerequisites
+- Node.js (v14 or higher)
+- npm or yarn
+- MongoDB Atlas account
+- Expo CLI (for mobile development)
+
+### Backend Setup
+```bash
+cd backend
+npm install
+npm run dev
+```
+
+### Frontend Setup
+```bash
+cd frontend
+npm install
+npm start
+```
