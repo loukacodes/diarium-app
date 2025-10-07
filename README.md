@@ -29,7 +29,8 @@ Diarium is a cross-platform diary app that helps users reflect on their daily li
 - Hosted on [Render](https://render.com/) / [Heroku](https://www.heroku.com/)  
 
 ### Database
-- [MongoDB Atlas](https://www.mongodb.com/atlas) – cloud-based NoSQL database  
+- [MongoDB](https://www.mongodb.com/) – NoSQL database
+- [Prisma](https://www.prisma.io/) – Database ORM and management  
 
 ---
 
@@ -67,7 +68,8 @@ diarium-app/
 ### Prerequisites
 - Node.js (v14 or higher)
 - npm or yarn
-- MongoDB Atlas account
+- MongoDB (local installation)
+- Prisma CLI
 - Expo CLI (for mobile development)
 
 ### Backend Setup
@@ -76,6 +78,31 @@ cd backend
 npm install
 npm run dev
 ```
+
+### Database Management
+
+#### Prisma Studio (Visual Database Browser)
+```bash
+cd backend
+npx prisma studio
+```
+- **URL:** http://localhost:5555
+- **Features:** View, edit, and manage database records
+- **Collections:** User, Entry tables
+
+#### MongoDB Shell
+```bash
+mongosh
+use diarium
+db.User.find()        # View all users
+db.Entry.find()      # View all entries
+```
+
+#### API Endpoints
+- **Database Overview:** http://localhost:3000/api/database
+- **All Users:** http://localhost:3000/api/users
+- **All Entries:** http://localhost:3000/api/entries
+- **Health Check:** http://localhost:3000/health
 
 ### Frontend Setup
 ```bash
