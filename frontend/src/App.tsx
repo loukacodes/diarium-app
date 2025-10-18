@@ -2,27 +2,251 @@ import { useState } from 'react'
 import './App.css'
 
 function App() {
-  const [apiResponse, setApiResponse] = useState<string>('')
-  const [diaryEntry, setDiaryEntry] = useState<string>('')
-  const [mood, setMood] = useState<string>('')
+  const [apiResponse, setApiResponse] = useState<string>('');
+  const [diaryEntry, setDiaryEntry] = useState<string>('');
+  const [mood, setMood] = useState<string>('');
+
+  // Authentication state
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [user, setUser] = useState<any>(null);
+  const [token, setToken] = useState<string>('');
+  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
+
+  // Auth form state
+  const [authForm, setAuthForm] = useState({
+    name: '',
+    email: '',
+    password: '',
+  });
 
   const testAPI = async () => {
     try {
-      const response = await fetch('http://localhost:3000')
-      const data = await response.json()
-      setApiResponse(JSON.stringify(data, null, 2))
+      const response = await fetch('http://localhost:3000');
+      const data = await response.json();
+      setApiResponse(JSON.stringify(data, null, 2));
     } catch (error) {
-      setApiResponse(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      setApiResponse(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
+  };
+
+  // Authentication functions
+  const handleAuth = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    try {
+      const endpoint = authMode === 'login' ? '/api/auth/login' : '/api/auth/register';
+      const body =
+        authMode === 'login'
+          ? { email: authForm.email, password: authForm.password }
+          : { name: authForm.name, email: authForm.email, password: authForm.password };
+
+      const response = await fetch(`http://localhost:3000${endpoint}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Authentication failed');
+      }
+
+      const data = await response.json();
+      setUser(data.user);
+      setToken(data.token);
+      setIsAuthenticated(true);
+
+      // Clear form
+      setAuthForm({ name: '', email: '', password: '' });
+    } catch (error) {
+      console.error('Auth error:', error);
+      alert(`Authentication failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  };
+
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    setUser(null);
+    setToken('');
+    setDiaryEntry('');
+    setMood('');
+  };
+
+  const handleAuthFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setAuthForm({
+      ...authForm,
+      [e.target.name]: e.target.value,
+    });
+  };
+
+  const analyzeMood = async () => {
+    try {
+      const response = await fetch('http://localhost:3000/api/analyze-mood', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ text: diaryEntry }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Mood analysis failed');
+      }
+
+      const data = await response.json();
+      setMood(data.mood);
+    } catch (error) {
+      console.error('Mood analysis error:', error);
+      // Fallback to random mood if API fails
+      const moods = ['Happy', 'Sad', 'Excited', 'Calm', 'Stressed', 'Grateful'];
+      const randomMood = moods[Math.floor(Math.random() * moods.length)];
+      setMood(randomMood);
+    }
+  };
+
+  const saveEntry = async () => {
+    try {
+      const response = await fetch('http://localhost:3000/api/entries', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
+        body: JSON.stringify({
+          content: diaryEntry,
+          mood: mood,
+          moodScore: Math.random(), // Mock score for now
+          userId: user?.id,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save entry');
+      }
+
+      const data = await response.json();
+      alert('Entry saved successfully!');
+
+      // Clear the form
+      setDiaryEntry('');
+      setMood('');
+    } catch (error) {
+      console.error('Save entry error:', error);
+      alert('Failed to save entry. Please try again.');
+    }
+  };
+
+  // Authentication form
+  if (!isAuthenticated) {
+    return (
+      <div
+        className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4"
+        style={{
+          backgroundColor: '#f0f9ff',
+          minHeight: '100vh',
+          padding: '1rem',
+        }}
+      >
+        <div
+          className="max-w-md mx-auto"
+          style={{
+            maxWidth: '28rem',
+            margin: '0 auto',
+          }}
+        >
+          {/* Header */}
+          <div className="text-center space-y-2 mb-8">
+            <h1 className="text-4xl font-bold text-gray-900" style={{ color: '#1f2937' }}>
+              Diarium
+            </h1>
+            <p className="text-xl text-gray-600" style={{ color: '#4b5563' }}>
+              Write – Track – Grow
+            </p>
+          </div>
+
+          {/* Auth Form */}
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="flex gap-2 mb-6">
+              <button
+                onClick={() => setAuthMode('login')}
+                className={`flex-1 py-2 px-4 rounded transition-colors ${
+                  authMode === 'login'
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                }`}
+              >
+                Login
+              </button>
+              <button
+                onClick={() => setAuthMode('register')}
+                className={`flex-1 py-2 px-4 rounded transition-colors ${
+                  authMode === 'register'
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                }`}
+              >
+                Register
+              </button>
+            </div>
+
+            <form onSubmit={handleAuth} className="space-y-4">
+              {authMode === 'register' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={authForm.name}
+                    onChange={handleAuthFormChange}
+                    required={authMode === 'register'}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Enter your name"
+                  />
+                </div>
+              )}
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <input
+                  type="email"
+                  name="email"
+                  value={authForm.email}
+                  onChange={handleAuthFormChange}
+                  required
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Enter your email"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                <input
+                  type="password"
+                  name="password"
+                  value={authForm.password}
+                  onChange={handleAuthFormChange}
+                  required
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Enter your password"
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 px-4 rounded-lg transition-colors"
+              >
+                {authMode === 'login' ? 'Login' : 'Register'}
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    );
   }
 
-  const analyzeMood = () => {
-    // Mock mood analysis - in real app this would call the backend
-    const moods = ['Happy', 'Sad', 'Excited', 'Calm', 'Stressed', 'Grateful']
-    const randomMood = moods[Math.floor(Math.random() * moods.length)]
-    setMood(randomMood)
-  }
-
+  // Main app (authenticated)
   return (
     <div
       className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4"
@@ -44,9 +268,21 @@ function App() {
       >
         {/* Header */}
         <div className="text-center space-y-2">
-          <h1 className="text-4xl font-bold text-gray-900" style={{ color: '#1f2937' }}>
-            Diarium
-          </h1>
+          <div className="flex justify-between items-center mb-4">
+            <div></div>
+            <h1 className="text-4xl font-bold text-gray-900" style={{ color: '#1f2937' }}>
+              Diarium
+            </h1>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-600">Welcome, {user?.name}</span>
+              <button
+                onClick={handleLogout}
+                className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm transition-colors"
+              >
+                Logout
+              </button>
+            </div>
+          </div>
           <p className="text-xl text-gray-600" style={{ color: '#4b5563' }}>
             Write – Track – Grow
           </p>
@@ -109,6 +345,7 @@ function App() {
               Analyze Mood
             </button>
             <button
+              onClick={saveEntry}
               disabled={!diaryEntry.trim()}
               className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-4 py-2 rounded transition-colors"
             >
