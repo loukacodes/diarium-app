@@ -1,16 +1,34 @@
-import { useState } from 'react'
-import './App.css'
+import { useState, useEffect } from 'react';
+import './App.css';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Calendar } from '@/components/ui/calendar';
 
 function App() {
-  const [apiResponse, setApiResponse] = useState<string>('');
   const [diaryEntry, setDiaryEntry] = useState<string>('');
   const [mood, setMood] = useState<string>('');
 
   // Authentication state
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<{
+    id: string;
+    name: string;
+    email: string;
+    createdAt: string;
+  } | null>(null);
   const [token, setToken] = useState<string>('');
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(false);
+  const [date, setDate] = useState<Date | undefined>(new Date());
+
+  // Debug function for date selection
+  const handleDateSelect = (selectedDate: Date | undefined) => {
+    console.log('Date selected:', selectedDate);
+    setDate(selectedDate);
+  };
 
   // Auth form state
   const [authForm, setAuthForm] = useState({
@@ -18,16 +36,6 @@ function App() {
     email: '',
     password: '',
   });
-
-  const testAPI = async () => {
-    try {
-      const response = await fetch('http://localhost:3000');
-      const data = await response.json();
-      setApiResponse(JSON.stringify(data, null, 2));
-    } catch (error) {
-      setApiResponse(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-  };
 
   // Authentication functions
   const handleAuth = async (e: React.FormEvent) => {
@@ -81,6 +89,22 @@ function App() {
     });
   };
 
+  const toggleDarkMode = () => {
+    const newDarkMode = !isDarkMode;
+    setIsDarkMode(newDarkMode);
+    document.documentElement.classList.toggle('dark');
+    localStorage.setItem('darkMode', newDarkMode.toString());
+  };
+
+  // Initialize dark mode from localStorage
+  useEffect(() => {
+    const savedDarkMode = localStorage.getItem('darkMode') === 'true';
+    setIsDarkMode(savedDarkMode);
+    if (savedDarkMode) {
+      document.documentElement.classList.add('dark');
+    }
+  }, []);
+
   const analyzeMood = async () => {
     try {
       const response = await fetch('http://localhost:3000/api/analyze-mood', {
@@ -126,7 +150,7 @@ function App() {
         throw new Error('Failed to save entry');
       }
 
-      const data = await response.json();
+      await response.json();
       alert('Entry saved successfully!');
 
       // Clear the form
@@ -141,278 +165,212 @@ function App() {
   // Authentication form
   if (!isAuthenticated) {
     return (
-      <div
-        className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4"
-        style={{
-          backgroundColor: '#f0f9ff',
-          minHeight: '100vh',
-          padding: '1rem',
-        }}
-      >
-        <div
-          className="max-w-md mx-auto"
-          style={{
-            maxWidth: '28rem',
-            margin: '0 auto',
-          }}
-        >
-          {/* Header */}
-          <div className="text-center space-y-2 mb-8">
-            <h1 className="text-4xl font-bold text-gray-900" style={{ color: '#1f2937' }}>
-              Diarium
-            </h1>
-            <p className="text-xl text-gray-600" style={{ color: '#4b5563' }}>
-              Write – Track – Grow
-            </p>
-          </div>
-
-          {/* Auth Form */}
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="flex gap-2 mb-6">
-              <button
-                onClick={() => setAuthMode('login')}
-                className={`flex-1 py-2 px-4 rounded transition-colors ${
-                  authMode === 'login'
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                }`}
+      <div className="min-h-screen bg-background flex items-center justify-center p-2 sm:p-4">
+        <Card className="w-full max-w-sm sm:max-w-md">
+          <CardHeader className="text-center">
+            <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-4">
+              <div className="order-2 sm:order-1 sm:flex-1"></div>
+              <div className="order-1 sm:order-2">
+                <CardTitle className="text-2xl sm:text-4xl font-bold">Diarium</CardTitle>
+                <CardDescription className="text-lg sm:text-xl">
+                  Write – Track – Grow
+                </CardDescription>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={toggleDarkMode}
+                className="flex items-center gap-2 order-3 sm:order-3"
               >
-                Login
-              </button>
-              <button
-                onClick={() => setAuthMode('register')}
-                className={`flex-1 py-2 px-4 rounded transition-colors ${
-                  authMode === 'register'
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                }`}
-              >
-                Register
-              </button>
+                {isDarkMode ? '☀️' : '🌙'}
+              </Button>
             </div>
+          </CardHeader>
+          <CardContent>
+            <Tabs
+              value={authMode}
+              onValueChange={(value) => setAuthMode(value as 'login' | 'register')}
+              className="w-full"
+            >
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="login">Login</TabsTrigger>
+                <TabsTrigger value="register">Register</TabsTrigger>
+              </TabsList>
 
-            <form onSubmit={handleAuth} className="space-y-4">
-              {authMode === 'register' && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
-                  <input
-                    type="text"
-                    name="name"
-                    value={authForm.name}
-                    onChange={handleAuthFormChange}
-                    required={authMode === 'register'}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Enter your name"
-                  />
-                </div>
-              )}
+              <TabsContent value="login">
+                <form onSubmit={handleAuth} className="space-y-4 mt-4">
+                  <div className="space-y-2">
+                    <Input
+                      type="email"
+                      name="email"
+                      value={authForm.email}
+                      onChange={handleAuthFormChange}
+                      required
+                      placeholder="Enter your email"
+                    />
+                  </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                <input
-                  type="email"
-                  name="email"
-                  value={authForm.email}
-                  onChange={handleAuthFormChange}
-                  required
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Enter your email"
-                />
-              </div>
+                  <div className="space-y-2">
+                    <Input
+                      type="password"
+                      name="password"
+                      value={authForm.password}
+                      onChange={handleAuthFormChange}
+                      required
+                      placeholder="Enter your password"
+                    />
+                  </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                <input
-                  type="password"
-                  name="password"
-                  value={authForm.password}
-                  onChange={handleAuthFormChange}
-                  required
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Enter your password"
-                />
-              </div>
+                  <Button type="submit" className="w-full">
+                    Login
+                  </Button>
+                </form>
+              </TabsContent>
 
-              <button
-                type="submit"
-                className="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 px-4 rounded-lg transition-colors"
-              >
-                {authMode === 'login' ? 'Login' : 'Register'}
-              </button>
-            </form>
-          </div>
-        </div>
+              <TabsContent value="register">
+                <form onSubmit={handleAuth} className="space-y-4 mt-4">
+                  <div className="space-y-2">
+                    <Input
+                      type="text"
+                      name="name"
+                      value={authForm.name}
+                      onChange={handleAuthFormChange}
+                      required
+                      placeholder="Enter your name"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Input
+                      type="email"
+                      name="email"
+                      value={authForm.email}
+                      onChange={handleAuthFormChange}
+                      required
+                      placeholder="Enter your email"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Input
+                      type="password"
+                      name="password"
+                      value={authForm.password}
+                      onChange={handleAuthFormChange}
+                      required
+                      placeholder="Enter your password"
+                    />
+                  </div>
+
+                  <Button type="submit" className="w-full">
+                    Register
+                  </Button>
+                </form>
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   // Main app (authenticated)
   return (
-    <div
-      className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4"
-      style={{
-        backgroundColor: '#f0f9ff',
-        minHeight: '100vh',
-        padding: '1rem',
-      }}
-    >
-      <div
-        className="max-w-4xl mx-auto space-y-6"
-        style={{
-          maxWidth: '56rem',
-          margin: '0 auto',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '1.5rem',
-        }}
-      >
+    <div className="min-h-screen bg-background p-2 sm:p-4">
+      <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6">
         {/* Header */}
-        <div className="text-center space-y-2">
-          <div className="flex justify-between items-center mb-4">
-            <div></div>
-            <h1 className="text-4xl font-bold text-gray-900" style={{ color: '#1f2937' }}>
-              Diarium
-            </h1>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-600">Welcome, {user?.name}</span>
-              <button
-                onClick={handleLogout}
-                className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm transition-colors"
-              >
-                Logout
-              </button>
+        <Card>
+          <CardHeader>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <div className="flex-1">
+                <CardTitle className="text-2xl sm:text-4xl font-bold">Diarium</CardTitle>
+                <CardDescription className="text-lg sm:text-xl">
+                  Write – Track – Grow
+                </CardDescription>
+                <p className="text-muted-foreground mt-2 text-sm sm:text-base">
+                  Your personal diary with AI-powered mood analysis
+                </p>
+              </div>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full sm:w-auto">
+                <span className="text-sm">Welcome, {user?.name}</span>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={toggleDarkMode}
+                    className="flex items-center gap-2"
+                  >
+                    {isDarkMode ? '☀️' : '🌙'}
+                  </Button>
+                  <Button variant="destructive" size="sm" onClick={handleLogout}>
+                    Logout
+                  </Button>
+                </div>
+              </div>
             </div>
-          </div>
-          <p className="text-xl text-gray-600" style={{ color: '#4b5563' }}>
-            Write – Track – Grow
-          </p>
-          <p className="text-gray-500" style={{ color: '#6b7280' }}>
-            Your personal diary with AI-powered mood analysis
-          </p>
-        </div>
-
-        {/* Status Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <span className="bg-green-500 text-white px-2 py-1 rounded text-sm">✅</span>
-              <h3 className="text-lg font-semibold">Backend Status</h3>
-            </div>
-            <p className="text-sm text-gray-600 mb-4">API Server running on port 3000</p>
-            <button
-              onClick={testAPI}
-              className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded transition-colors"
-            >
-              Test API Connection
-            </button>
-            {apiResponse && (
-              <pre className="mt-4 p-3 bg-gray-100 rounded text-xs overflow-auto">
-                {apiResponse}
-              </pre>
-            )}
-          </div>
-
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <span className="bg-blue-500 text-white px-2 py-1 rounded text-sm">✅</span>
-              <h3 className="text-lg font-semibold">Frontend Status</h3>
-            </div>
-            <p className="text-sm text-gray-600 mb-4">React + Vite + Tailwind CSS</p>
-            <span className="bg-gray-200 text-gray-800 px-2 py-1 rounded text-sm">
-              React 18.3.1
-            </span>
-          </div>
-        </div>
+          </CardHeader>
+        </Card>
 
         {/* Diary Entry Section */}
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h3 className="text-xl font-semibold mb-2">Write Your Diary Entry</h3>
-          <p className="text-gray-600 mb-4">
-            Express your thoughts and feelings. Our AI will analyze your mood.
-          </p>
-          <textarea
-            placeholder="How was your day? What are you thinking about?"
-            value={diaryEntry}
-            onChange={(e) => setDiaryEntry(e.target.value)}
-            className="w-full min-h-[120px] p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-          />
-          <div className="flex gap-2 mt-4">
-            <button
-              onClick={analyzeMood}
-              disabled={!diaryEntry.trim()}
-              className="bg-green-500 hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-4 py-2 rounded transition-colors"
-            >
-              Analyze Mood
-            </button>
-            <button
-              onClick={saveEntry}
-              disabled={!diaryEntry.trim()}
-              className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-4 py-2 rounded transition-colors"
-            >
-              Save Entry
-            </button>
-          </div>
-          {mood && (
-            <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-              <p className="text-sm text-blue-800">
-                <strong>Detected Mood:</strong>
-                <span className="ml-2 bg-blue-200 text-blue-800 px-2 py-1 rounded text-sm">
-                  {mood}
-                </span>
-              </p>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg sm:text-xl">Write Your Diary Entry</CardTitle>
+            <CardDescription className="text-sm sm:text-base">
+              Express your thoughts and feelings. Our AI will analyze your mood.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Textarea
+              placeholder="How was your day? What are you thinking about?"
+              value={diaryEntry}
+              onChange={(e) => setDiaryEntry(e.target.value)}
+              className="min-h-[120px] w-full"
+            />
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Button
+                onClick={analyzeMood}
+                disabled={!diaryEntry.trim()}
+                variant="secondary"
+                className="w-full sm:w-auto"
+              >
+                Analyze Mood
+              </Button>
+              <Button
+                onClick={saveEntry}
+                disabled={!diaryEntry.trim()}
+                className="w-full sm:w-auto"
+              >
+                Save Entry
+              </Button>
             </div>
-          )}
-        </div>
-
-        {/* Features Preview */}
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h3 className="text-xl font-semibold mb-2">Upcoming Features</h3>
-          <p className="text-gray-600 mb-4">
-            Here's what we'll build in the next development phases
-          </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <h4 className="font-semibold">Authentication</h4>
-              <ul className="text-sm text-gray-600 space-y-1">
-                <li>• User registration and login</li>
-                <li>• JWT token authentication</li>
-                <li>• Secure password hashing</li>
-              </ul>
-            </div>
-            <div className="space-y-2">
-              <h4 className="font-semibold">Diary Management</h4>
-              <ul className="text-sm text-gray-600 space-y-1">
-                <li>• Create, edit, delete entries</li>
-                <li>• Search and filter entries</li>
-                <li>• Rich text editor</li>
-              </ul>
-            </div>
-            <div className="space-y-2">
-              <h4 className="font-semibold">Mood Analysis</h4>
-              <ul className="text-sm text-gray-600 space-y-1">
-                <li>• AI-powered mood detection</li>
-                <li>• Mood trend charts</li>
-                <li>• Emotional insights</li>
-              </ul>
-            </div>
-            <div className="space-y-2">
-              <h4 className="font-semibold">Data & Security</h4>
-              <ul className="text-sm text-gray-600 space-y-1">
-                <li>• MongoDB database integration</li>
-                <li>• Data encryption</li>
-                <li>• Backup and export</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="text-center text-sm text-gray-500">
-          <p>🚀 Ready for development! Next: Authentication & Database setup</p>
-        </div>
+            {mood && (
+              <div className="p-3 bg-muted rounded-lg">
+                <p className="text-sm">
+                  <strong>Detected Mood:</strong>
+                  <span className="ml-2 bg-primary text-primary-foreground px-2 py-1 rounded text-sm">
+                    {mood}
+                  </span>
+                </p>
+              </div>
+            )}
+          </CardContent>
+          <CardContent className="space-y-4">
+            <Calendar
+              mode="single"
+              selected={date}
+              onSelect={handleDateSelect}
+              className="rounded-md border shadow-sm"
+            />
+            {date && (
+              <div className="text-sm text-muted-foreground text-center">
+                Selected date: {date.toLocaleDateString()}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
 }
 
-export default App
+export default App;
