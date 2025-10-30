@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Calendar } from '@/components/ui/calendar';
+import BottomNav from '@/components/ui/bottom-nav';
 
 function App() {
   const [diaryEntry, setDiaryEntry] = useState<string>('');
@@ -276,7 +277,7 @@ function App() {
 
   // Main app (authenticated)
   return (
-    <div className="min-h-screen bg-background p-2 sm:p-4">
+    <div className="min-h-screen bg-background p-2 sm:p-4 pb-20 sm:pb-4">
       <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6">
         {/* Header */}
         <Card>
@@ -369,6 +370,9 @@ function App() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Bottom Navigation - Mobile Only */}
+      <BottomNav />
     </div>
   );
 }

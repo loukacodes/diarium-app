@@ -69,8 +69,42 @@
   }
   
   /* Mobile-first improvements */
-  @media (max-width: 640px) {    
+  @media (max-width: 640px) {
+    html {
+      font-size: 14px;
+    }
 
+    /* Improve touch targets on mobile */
+    button, [role="button"] {
+      min-height: 44px;
+      min-width: 44px;
+    }
+
+    /* Better spacing on mobile */
+    .space-y-4 > * + * {
+      margin-top: 1rem;
+    }
+
+    .space-y-2 > * + * {
+      margin-top: 0.5rem;
+    }
+
+    /* Mobile tab improvements */
+    [data-radix-tabs-trigger] {
+      min-height: 44px;
+      padding: 0.75rem 1rem;
+      font-size: 0.875rem;
+    }
+
+    [data-radix-tabs-list] {
+      height: auto;
+      min-height: 44px;
+    }
+
+    /* Bottom navigation spacing */
+    .pb-20 {
+      padding-bottom: 5rem;
+    }
   }
 }
 
