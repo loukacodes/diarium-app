@@ -105,6 +105,11 @@
     .pb-20 {
       padding-bottom: 5rem;
     }
+
+    button, [role="button"] {
+      min-width: unset;
+      min-height: unset;
+    }
   }
 }
 

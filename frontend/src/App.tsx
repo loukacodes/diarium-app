@@ -362,11 +362,6 @@ function App() {
               onSelect={handleDateSelect}
               className="rounded-md border shadow-sm"
             />
-            {date && (
-              <div className="text-sm text-muted-foreground text-center">
-                Selected date: {date.toLocaleDateString()}
-              </div>
-            )}
           </CardContent>
         </Card>
       </div>
