@@ -25,9 +25,7 @@ function App() {
   const [isDarkMode, setIsDarkMode] = useState<boolean>(false);
   const [date, setDate] = useState<Date | undefined>(new Date());
 
-  // Debug function for date selection
   const handleDateSelect = (selectedDate: Date | undefined) => {
-    console.log('Date selected:', selectedDate);
     setDate(selectedDate);
   };
 
@@ -67,6 +65,10 @@ function App() {
       setToken(data.token);
       setIsAuthenticated(true);
 
+      // Save to localStorage for persistence
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+
       // Clear form
       setAuthForm({ name: '', email: '', password: '' });
     } catch (error) {
@@ -81,6 +83,10 @@ function App() {
     setToken('');
     setDiaryEntry('');
     setMood('');
+
+    // Clear localStorage
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
   };
 
   const handleAuthFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -97,12 +103,62 @@ function App() {
     localStorage.setItem('darkMode', newDarkMode.toString());
   };
 
-  // Initialize dark mode from localStorage
+  // Initialize dark mode and auth state from localStorage
   useEffect(() => {
     const savedDarkMode = localStorage.getItem('darkMode') === 'true';
     setIsDarkMode(savedDarkMode);
     if (savedDarkMode) {
       document.documentElement.classList.add('dark');
+    }
+
+    // Restore and verify authentication state from localStorage
+    const savedToken = localStorage.getItem('token');
+    const savedUser = localStorage.getItem('user');
+
+    if (savedToken && savedUser) {
+      // Verify token is still valid
+      const verifyToken = async () => {
+        try {
+          const response = await fetch('http://localhost:3000/api/auth/me', {
+            headers: {
+              Authorization: `Bearer ${savedToken}`,
+            },
+          });
+
+          if (response.ok) {
+            const userData = await response.json();
+            // Update user data in case it changed
+            const user = {
+              id: userData.id,
+              name: userData.name,
+              email: userData.email,
+              createdAt: userData.createdAt,
+            };
+            setToken(savedToken);
+            setUser(user);
+            setIsAuthenticated(true);
+            // Update localStorage with fresh user data
+            localStorage.setItem('user', JSON.stringify(user));
+          } else {
+            // Token is invalid or expired
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            setIsAuthenticated(false);
+            setUser(null);
+            setToken('');
+          }
+        } catch (error) {
+          console.error('Error verifying token:', error);
+          // Clear invalid data on error
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          setIsAuthenticated(false);
+          setUser(null);
+          setToken('');
+        }
+      };
+
+      verifyToken();
     }
   }, []);
 
