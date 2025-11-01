@@ -7,7 +7,7 @@ require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+const JWT_SECRET = process.env.JWT_SECRET || 'secret-key-in-production';
 
 // Middleware
 app.use(cors());
@@ -270,6 +270,38 @@ app.get('/api/entries/:id', authenticateToken, async (req, res) => {
     }
 
     res.json(entry);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Delete entry by ID
+app.delete('/api/entries/:id', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Find entry first to check ownership
+    const entry = await prisma.entry.findUnique({
+      where: { id },
+    });
+
+    if (!entry) {
+      return res.status(404).json({ error: 'Entry not found' });
+    }
+
+    // Check if entry belongs to the authenticated user
+    if (entry.userId !== req.user.userId) {
+      return res.status(403).json({ error: 'Access denied. This entry does not belong to you.' });
+    }
+
+    // Delete entry
+    await prisma.entry.delete({
+      where: { id },
+    });
+
+    res.json({
+      message: 'Entry deleted successfully',
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
