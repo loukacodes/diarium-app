@@ -241,6 +241,40 @@ app.get('/api/entries', async (req, res) => {
   }
 });
 
+// Get entry by ID
+app.get('/api/entries/:id', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Find entry
+    const entry = await prisma.entry.findUnique({
+      where: { id },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+    });
+
+    if (!entry) {
+      return res.status(404).json({ error: 'Entry not found' });
+    }
+
+    // Check if entry belongs to the authenticated user
+    if (entry.userId !== req.user.userId) {
+      return res.status(403).json({ error: 'Access denied. This entry does not belong to you.' });
+    }
+
+    res.json(entry);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Create new entry
 app.post('/api/entries', async (req, res) => {
   try {
