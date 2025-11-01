@@ -218,10 +218,13 @@ app.get('/api/users', async (req, res) => {
   }
 });
 
-// Get all entries
-app.get('/api/entries', async (req, res) => {
+// Get all entries (for authenticated user only)
+app.get('/api/entries', authenticateToken, async (req, res) => {
   try {
     const entries = await prisma.entry.findMany({
+      where: {
+        userId: req.user.userId,
+      },
       include: {
         user: {
           select: {
