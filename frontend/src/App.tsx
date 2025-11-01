@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Calendar } from '@/components/ui/calendar';
 import BottomNav from '@/components/ui/bottom-nav';
+import { API_BASE_URL } from '@/config/api';
 
 function App() {
   const [diaryEntry, setDiaryEntry] = useState<string>('');
@@ -47,7 +48,7 @@ function App() {
           ? { email: authForm.email, password: authForm.password }
           : { name: authForm.name, email: authForm.email, password: authForm.password };
 
-      const response = await fetch(`http://localhost:3000${endpoint}`, {
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -119,7 +120,7 @@ function App() {
       // Verify token is still valid
       const verifyToken = async () => {
         try {
-          const response = await fetch('http://localhost:3000/api/auth/me', {
+          const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
             headers: {
               Authorization: `Bearer ${savedToken}`,
             },
@@ -164,7 +165,7 @@ function App() {
 
   const analyzeMood = async () => {
     try {
-      const response = await fetch('http://localhost:3000/api/analyze-mood', {
+      const response = await fetch(`${API_BASE_URL}/api/analyze-mood`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -189,7 +190,7 @@ function App() {
 
   const saveEntry = async () => {
     try {
-      const response = await fetch('http://localhost:3000/api/entries', {
+      const response = await fetch(`${API_BASE_URL}/api/entries`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
