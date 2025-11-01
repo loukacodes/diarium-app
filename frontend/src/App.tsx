@@ -199,7 +199,6 @@ function App() {
           content: diaryEntry,
           mood: mood,
           moodScore: Math.random(), // Mock score for now
-          userId: user?.id,
         }),
       });
 
