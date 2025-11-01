@@ -99,6 +99,24 @@ local.properties
 *.hprof
 .cxx/
 
+# Capacitor - Android (exclude build artifacts, keep source)
+frontend/android/app/build/
+frontend/android/.gradle/
+frontend/android/build/
+frontend/android/.idea/
+frontend/android/*.iml
+frontend/android/.cxx/
+
+# Capacitor - iOS (exclude build artifacts, keep source)
+frontend/ios/App/build/
+frontend/ios/App/DerivedData/
+frontend/ios/Pods/
+frontend/ios/App/Pods/
+frontend/ios/App/*.xcworkspace/xcuserdata/
+frontend/ios/App/*.xcworkspace/xcshareddata/
+frontend/ios/App/*.xcuserstate
+frontend/ios/App/DerivedData/
+
 # Bundle artifacts
 *.jsbundle
 
