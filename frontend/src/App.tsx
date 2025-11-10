@@ -274,6 +274,33 @@ function App() {
     }
   }, [currentView, fetchEntries, isAuthenticated, token]);
 
+  // Delete entry
+  const deleteEntry = async (entryId: string) => {
+    // Confirm deletion
+    if (!confirm('Are you sure you want to delete this entry? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`http://localhost:3000/api/entries/${entryId}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete entry');
+      }
+
+      // Remove entry from local state using functional update
+      setEntries((prevEntries) => prevEntries.filter((entry) => entry.id !== entryId));
+    } catch (error) {
+      console.error('Delete entry error:', error);
+      alert('Failed to delete entry. Please try again.');
+    }
+  };
+
   // Helper function to calculate word count
   const getWordCount = (text: string): number => {
     return text
@@ -537,9 +564,19 @@ function App() {
                         </div>
                       </CardHeader>
                       <CardContent>
-                        <p className="text-sm sm:text-base text-foreground whitespace-pre-wrap break-words">
+                        <p className="text-sm sm:text-base text-foreground whitespace-pre-wrap break-words mb-4">
                           {entry.content}
                         </p>
+                        <div className="flex justify-end">
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => deleteEntry(entry.id)}
+                            className="w-full sm:w-auto"
+                          >
+                            Delete Entry
+                          </Button>
+                        </div>
                       </CardContent>
                     </Card>
                   ))}
