@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import './App.css';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,6 +7,16 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Calendar } from '@/components/ui/calendar';
 import BottomNav from '@/components/ui/bottom-nav';
+
+interface Entry {
+  id: string;
+  content: string;
+  mood: string | null;
+  moodScore: number | null;
+  createdAt: string;
+  updatedAt: string;
+  userId: string;
+}
 
 function App() {
   const [diaryEntry, setDiaryEntry] = useState<string>('');
@@ -24,6 +34,13 @@ function App() {
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const [isDarkMode, setIsDarkMode] = useState<boolean>(false);
   const [date, setDate] = useState<Date | undefined>(new Date());
+
+  // Navigation state
+  const [currentView, setCurrentView] = useState<'home' | 'entries' | 'mood' | 'profile'>('home');
+
+  // Entries state
+  const [entries, setEntries] = useState<Entry[]>([]);
+  const [isLoadingEntries, setIsLoadingEntries] = useState<boolean>(false);
 
   const handleDateSelect = (selectedDate: Date | undefined) => {
     setDate(selectedDate);
@@ -212,10 +229,66 @@ function App() {
       // Clear the form
       setDiaryEntry('');
       setMood('');
+
+      // Refresh entries if on entries view
+      if (currentView === 'entries') {
+        fetchEntries();
+      }
     } catch (error) {
       console.error('Save entry error:', error);
       alert('Failed to save entry. Please try again.');
     }
+  };
+
+  // Fetch entries
+  const fetchEntries = useCallback(async () => {
+    if (!token) return;
+
+    setIsLoadingEntries(true);
+    try {
+      const response = await fetch('http://localhost:3000/api/entries', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch entries');
+      }
+
+      const data = await response.json();
+      setEntries(data);
+    } catch (error) {
+      console.error('Fetch entries error:', error);
+      alert('Failed to load entries. Please try again.');
+    } finally {
+      setIsLoadingEntries(false);
+    }
+  }, [token]);
+
+  // Fetch entries when switching to entries view
+  useEffect(() => {
+    if (currentView === 'entries' && isAuthenticated && token) {
+      fetchEntries();
+    }
+  }, [currentView, fetchEntries, isAuthenticated, token]);
+
+  // Helper function to calculate word count
+  const getWordCount = (text: string): number => {
+    return text
+      .trim()
+      .split(/\s+/)
+      .filter((word) => word.length > 0).length;
+  };
+
+  // Helper function to format date
+  const formatDate = (dateString: string): string => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
   };
 
   // Authentication form
@@ -367,62 +440,160 @@ function App() {
           </CardHeader>
         </Card>
 
-        {/* Diary Entry Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg sm:text-xl">Write Your Diary Entry</CardTitle>
-            <CardDescription className="text-sm sm:text-base">
-              Express your thoughts and feelings. Our AI will analyze your mood.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Textarea
-              placeholder="How was your day? What are you thinking about?"
-              value={diaryEntry}
-              onChange={(e) => setDiaryEntry(e.target.value)}
-              className="min-h-[120px] w-full"
-            />
-            <div className="flex flex-col sm:flex-row gap-2">
-              <Button
-                onClick={analyzeMood}
-                disabled={!diaryEntry.trim()}
-                variant="secondary"
-                className="w-full sm:w-auto"
-              >
-                Analyze Mood
-              </Button>
-              <Button
-                onClick={saveEntry}
-                disabled={!diaryEntry.trim()}
-                className="w-full sm:w-auto"
-              >
-                Save Entry
-              </Button>
-            </div>
-            {mood && (
-              <div className="p-3 bg-muted rounded-lg">
-                <p className="text-sm">
-                  <strong>Detected Mood:</strong>
-                  <span className="ml-2 bg-primary text-primary-foreground px-2 py-1 rounded text-sm">
-                    {mood}
-                  </span>
-                </p>
+        {/* Conditional Views */}
+        {currentView === 'home' && (
+          <>
+            {/* Diary Entry Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg sm:text-xl">Write Your Diary Entry</CardTitle>
+                <CardDescription className="text-sm sm:text-base">
+                  Express your thoughts and feelings. Our AI will analyze your mood.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <Textarea
+                  placeholder="How was your day? What are you thinking about?"
+                  value={diaryEntry}
+                  onChange={(e) => setDiaryEntry(e.target.value)}
+                  className="min-h-[120px] w-full"
+                />
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <Button
+                    onClick={analyzeMood}
+                    disabled={!diaryEntry.trim()}
+                    variant="secondary"
+                    className="w-full sm:w-auto"
+                  >
+                    Analyze Mood
+                  </Button>
+                  <Button
+                    onClick={saveEntry}
+                    disabled={!diaryEntry.trim()}
+                    className="w-full sm:w-auto"
+                  >
+                    Save Entry
+                  </Button>
+                </div>
+                {mood && (
+                  <div className="p-3 bg-muted rounded-lg">
+                    <p className="text-sm">
+                      <strong>Detected Mood:</strong>
+                      <span className="ml-2 bg-primary text-primary-foreground px-2 py-1 rounded text-sm">
+                        {mood}
+                      </span>
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+              <CardContent className="space-y-4">
+                <Calendar
+                  mode="single"
+                  selected={date}
+                  onSelect={handleDateSelect}
+                  className="rounded-md border shadow-sm"
+                />
+              </CardContent>
+            </Card>
+          </>
+        )}
+
+        {currentView === 'entries' && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg sm:text-xl">Your Diary Entries</CardTitle>
+              <CardDescription className="text-sm sm:text-base">
+                All your thoughts and memories in one place
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isLoadingEntries ? (
+                <div className="text-center py-8 text-muted-foreground">Loading entries...</div>
+              ) : entries.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <p className="text-lg mb-2">No entries yet</p>
+                  <p className="text-sm">Start writing your first diary entry!</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {entries.map((entry) => (
+                    <Card key={entry.id} className="hover:shadow-md transition-shadow">
+                      <CardHeader className="pb-3">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                          <CardTitle className="text-base sm:text-lg">
+                            {formatDate(entry.createdAt)}
+                          </CardTitle>
+                          <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                            <span>{getWordCount(entry.content)} words</span>
+                            {entry.mood && (
+                              <span className="bg-primary/10 text-primary px-2 py-1 rounded text-xs">
+                                {entry.mood}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-sm sm:text-base text-foreground whitespace-pre-wrap break-words">
+                          {entry.content}
+                        </p>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {currentView === 'mood' && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg sm:text-xl">Mood Analytics</CardTitle>
+              <CardDescription className="text-sm sm:text-base">
+                Track your emotional journey
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-8 text-muted-foreground">
+                <p>Mood analytics coming soon...</p>
               </div>
-            )}
-          </CardContent>
-          <CardContent className="space-y-4">
-            <Calendar
-              mode="single"
-              selected={date}
-              onSelect={handleDateSelect}
-              className="rounded-md border shadow-sm"
-            />
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
+
+        {currentView === 'profile' && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg sm:text-xl">Profile</CardTitle>
+              <CardDescription className="text-sm sm:text-base">
+                Your account information
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">Name</p>
+                  <p className="text-base font-medium">{user?.name}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Email</p>
+                  <p className="text-base font-medium">{user?.email}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Member since</p>
+                  <p className="text-base font-medium">
+                    {user?.createdAt ? formatDate(user.createdAt) : 'N/A'}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {/* Bottom Navigation - Mobile Only */}
-      <BottomNav />
+      <BottomNav currentView={currentView} onViewChange={setCurrentView} />
     </div>
   );
 }
