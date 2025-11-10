@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Calendar } from '@/components/ui/calendar';
 import BottomNav from '@/components/ui/bottom-nav';
+import DesktopNav from '@/components/ui/desktop-nav';
 
 interface Entry {
   id: string;
@@ -437,6 +438,8 @@ function App() {
                 </div>
               </div>
             </div>
+            {/* Desktop Navigation */}
+            <DesktopNav currentView={currentView} onViewChange={setCurrentView} />
           </CardHeader>
         </Card>
 
