@@ -1,7 +1,8 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 
-interface BottomNavProps {
+interface DesktopNavProps {
   className?: string;
   currentView: 'home' | 'entries' | 'mood' | 'profile';
   onViewChange: (view: 'home' | 'entries' | 'mood' | 'profile') => void;
@@ -13,7 +14,7 @@ interface NavItem {
   icon: string;
 }
 
-const BottomNav: React.FC<BottomNavProps> = ({ className, currentView, onViewChange }) => {
+const DesktopNav: React.FC<DesktopNavProps> = ({ className, currentView, onViewChange }) => {
   const navItems: NavItem[] = [
     {
       id: 'home',
@@ -40,34 +41,31 @@ const BottomNav: React.FC<BottomNavProps> = ({ className, currentView, onViewCha
   return (
     <nav
       className={cn(
-        'fixed bottom-0 left-0 right-0 bg-background border-t border-border',
-        'flex items-center justify-around py-2 px-4',
-        'sm:hidden', // Only show on mobile
+        'hidden sm:flex items-center gap-2',
+        'border-b border-border pb-4 mb-4',
         className,
       )}
     >
       {navItems.map((item) => {
         const isActive = currentView === item.id;
         return (
-          <button
+          <Button
             key={item.id}
+            variant={isActive ? 'default' : 'ghost'}
             onClick={() => onViewChange(item.id)}
             className={cn(
-              'flex flex-col items-center justify-center py-2 px-3 rounded-lg',
-              'transition-colors duration-200 min-h-[44px] min-w-[44px]',
-              'hover:bg-accent/50 active:bg-accent',
-              isActive
-                ? 'text-primary bg-primary/10'
-                : 'text-muted-foreground hover:text-foreground',
+              'flex items-center gap-2',
+              isActive && 'bg-primary text-primary-foreground',
             )}
           >
-            <span className="text-lg mb-1">{item.icon}</span>
-            <span className="text-xs font-medium">{item.label}</span>
-          </button>
+            <span>{item.icon}</span>
+            <span>{item.label}</span>
+          </Button>
         );
       })}
     </nav>
   );
 };
 
-export default BottomNav;
+export default DesktopNav;
+

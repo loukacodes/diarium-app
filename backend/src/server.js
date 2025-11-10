@@ -7,7 +7,7 @@ require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+const JWT_SECRET = process.env.JWT_SECRET || 'secret-key-in-production';
 
 // Middleware
 app.use(cors());
@@ -218,10 +218,13 @@ app.get('/api/users', async (req, res) => {
   }
 });
 
-// Get all entries
-app.get('/api/entries', async (req, res) => {
+// Get all entries (for authenticated user only)
+app.get('/api/entries', authenticateToken, async (req, res) => {
   try {
     const entries = await prisma.entry.findMany({
+      where: {
+        userId: req.user.userId,
+      },
       include: {
         user: {
           select: {
@@ -241,23 +244,89 @@ app.get('/api/entries', async (req, res) => {
   }
 });
 
-// Create new entry
-app.post('/api/entries', async (req, res) => {
+// Get entry by ID
+app.get('/api/entries/:id', authenticateToken, async (req, res) => {
   try {
-    const { content, mood, moodScore, userId } = req.body;
+    const { id } = req.params;
+
+    // Find entry
+    const entry = await prisma.entry.findUnique({
+      where: { id },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+    });
+
+    if (!entry) {
+      return res.status(404).json({ error: 'Entry not found' });
+    }
+
+    // Check if entry belongs to the authenticated user
+    if (entry.userId !== req.user.userId) {
+      return res.status(403).json({ error: 'Access denied. This entry does not belong to you.' });
+    }
+
+    res.json(entry);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Delete entry by ID
+app.delete('/api/entries/:id', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Find entry first to check ownership
+    const entry = await prisma.entry.findUnique({
+      where: { id },
+    });
+
+    if (!entry) {
+      return res.status(404).json({ error: 'Entry not found' });
+    }
+
+    // Check if entry belongs to the authenticated user
+    if (entry.userId !== req.user.userId) {
+      return res.status(403).json({ error: 'Access denied. This entry does not belong to you.' });
+    }
+
+    // Delete entry
+    await prisma.entry.delete({
+      where: { id },
+    });
+
+    res.json({
+      message: 'Entry deleted successfully',
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Create new entry
+app.post('/api/entries', authenticateToken, async (req, res) => {
+  try {
+    const { content, mood, moodScore } = req.body;
 
     // Validate input
     if (!content) {
       return res.status(400).json({ error: 'Content is required' });
     }
 
-    // Create entry
+    // Create entry with authenticated user's ID
     const entry = await prisma.entry.create({
       data: {
         content,
         mood: mood || null,
         moodScore: moodScore || null,
-        userId: userId || null,
+        userId: req.user.userId,
       },
       include: {
         user: {

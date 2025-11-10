@@ -178,4 +178,26 @@
     color: hsl(var(--accent-foreground));
     font-weight: 500;
   }
+
+  /* Calendar entry indicators */
+  [data-slot="calendar"] button.has-entry {
+    position: relative;
+  }
+
+  [data-slot="calendar"] button.has-entry::after {
+    content: '';
+    position: absolute;
+    bottom: 2px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 4px;
+    height: 4px;
+    background-color: hsl(var(--primary));
+    border-radius: 50%;
+    z-index: 1;
+  }
+
+  [data-slot="calendar"] button.has-entry[data-selected-single="true"]::after {
+    background-color: hsl(var(--primary-foreground));
+  }
 }
