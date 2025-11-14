@@ -10,7 +10,7 @@ import BottomNav from '@/components/ui/bottom-nav';
 import DesktopNav from '@/components/ui/desktop-nav';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { ArrowLeft } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import API_URL from '@/config/api';
 
 interface Entry {
   id: string;
@@ -70,7 +70,7 @@ function App() {
           ? { email: authForm.email, password: authForm.password }
           : { name: authForm.name, email: authForm.email, password: authForm.password };
 
-      const response = await fetch(`http://localhost:3000${endpoint}`, {
+      const response = await fetch(`${API_URL}${endpoint}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -142,7 +142,7 @@ function App() {
       // Verify token is still valid
       const verifyToken = async () => {
         try {
-          const response = await fetch('http://localhost:3000/api/auth/me', {
+          const response = await fetch(`${API_URL}/api/auth/me`, {
             headers: {
               Authorization: `Bearer ${savedToken}`,
             },
@@ -187,7 +187,7 @@ function App() {
 
   const analyzeMood = async () => {
     try {
-      const response = await fetch('http://localhost:3000/api/analyze-mood', {
+      const response = await fetch(`${API_URL}/api/analyze-mood`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -212,7 +212,7 @@ function App() {
 
   const saveEntry = async () => {
     try {
-      const response = await fetch('http://localhost:3000/api/entries', {
+      const response = await fetch(`${API_URL}/api/entries`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -252,7 +252,7 @@ function App() {
 
     setIsLoadingEntries(true);
     try {
-      const response = await fetch('http://localhost:3000/api/entries', {
+      const response = await fetch(`${API_URL}/api/entries`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -274,7 +274,11 @@ function App() {
 
   // Fetch entries when switching to entries view or home view (for calendar indicators)
   useEffect(() => {
-    if ((currentView === 'entries' || currentView === 'home' || currentView === 'mood') && isAuthenticated && token) {
+    if (
+      (currentView === 'entries' || currentView === 'home' || currentView === 'mood') &&
+      isAuthenticated &&
+      token
+    ) {
       fetchEntries();
     }
   }, [currentView, fetchEntries, isAuthenticated, token]);
@@ -285,7 +289,7 @@ function App() {
       if (!selectedEntryId || !token) return;
 
       try {
-        const response = await fetch(`http://localhost:3000/api/entries/${selectedEntryId}`, {
+        const response = await fetch(`${API_URL}/api/entries/${selectedEntryId}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -327,13 +331,13 @@ function App() {
         );
       });
     },
-    [getEntryDates]
+    [getEntryDates],
   );
 
   // Delete entry (without confirmation - confirmation should be done by caller)
   const deleteEntry = async (entryId: string) => {
     try {
-      const response = await fetch(`http://localhost:3000/api/entries/${entryId}`, {
+      const response = await fetch(`${API_URL}/api/entries/${entryId}`, {
         method: 'DELETE',
         headers: {
           Authorization: `Bearer ${token}`,
@@ -613,13 +617,14 @@ function App() {
               ) : (
                 <div className="space-y-4">
                   {entries.map((entry) => {
-                    const preview = entry.content.length > 200 
-                      ? entry.content.substring(0, 200) + '...' 
-                      : entry.content;
-                    
+                    const preview =
+                      entry.content.length > 200
+                        ? entry.content.substring(0, 200) + '...'
+                        : entry.content;
+
                     return (
-                      <Card 
-                        key={entry.id} 
+                      <Card
+                        key={entry.id}
                         className="hover:shadow-md transition-shadow cursor-pointer"
                         onClick={() => setSelectedEntryId(entry.id)}
                       >
@@ -717,7 +722,11 @@ function App() {
                     variant="destructive"
                     size="sm"
                     onClick={async () => {
-                      if (confirm('Are you sure you want to delete this entry? This action cannot be undone.')) {
+                      if (
+                        confirm(
+                          'Are you sure you want to delete this entry? This action cannot be undone.',
+                        )
+                      ) {
                         await deleteEntry(selectedEntry.id);
                         setSelectedEntryId(null);
                         setSelectedEntry(null);
