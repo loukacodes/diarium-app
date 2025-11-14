@@ -10,7 +10,6 @@ import BottomNav from '@/components/ui/bottom-nav';
 import DesktopNav from '@/components/ui/desktop-nav';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { ArrowLeft } from 'lucide-react';
-import { cn } from '@/lib/utils';
 
 interface Entry {
   id: string;
@@ -24,7 +23,6 @@ interface Entry {
 
 function App() {
   const [diaryEntry, setDiaryEntry] = useState<string>('');
-  const [mood, setMood] = useState<string>('');
 
   // Authentication state
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
@@ -105,7 +103,6 @@ function App() {
     setUser(null);
     setToken('');
     setDiaryEntry('');
-    setMood('');
 
     // Clear localStorage
     localStorage.removeItem('token');
@@ -185,14 +182,14 @@ function App() {
     }
   }, []);
 
-  const analyzeMood = async () => {
+  const analyzeMood = async (text: string): Promise<string> => {
     try {
       const response = await fetch('http://localhost:3000/api/analyze-mood', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ text: diaryEntry }),
+        body: JSON.stringify({ text }),
       });
 
       if (!response.ok) {
@@ -200,18 +197,26 @@ function App() {
       }
 
       const data = await response.json();
-      setMood(data.mood);
+      return data.mood;
     } catch (error) {
       console.error('Mood analysis error:', error);
       // Fallback to random mood if API fails
       const moods = ['Happy', 'Sad', 'Excited', 'Calm', 'Stressed', 'Grateful'];
-      const randomMood = moods[Math.floor(Math.random() * moods.length)];
-      setMood(randomMood);
+      return moods[Math.floor(Math.random() * moods.length)];
     }
   };
 
   const saveEntry = async () => {
+    if (!diaryEntry.trim()) {
+      return;
+    }
+
     try {
+      // Analyze mood first
+      const detectedMood = await analyzeMood(diaryEntry);
+      const moodScore = Math.random(); // Mock score for now
+
+      // Save entry with analyzed mood
       const response = await fetch('http://localhost:3000/api/entries', {
         method: 'POST',
         headers: {
@@ -220,8 +225,8 @@ function App() {
         },
         body: JSON.stringify({
           content: diaryEntry,
-          mood: mood,
-          moodScore: Math.random(), // Mock score for now
+          mood: detectedMood,
+          moodScore: moodScore,
         }),
       });
 
@@ -229,17 +234,18 @@ function App() {
         throw new Error('Failed to save entry');
       }
 
-      await response.json();
-      alert('Entry saved successfully!');
+      const data = await response.json();
+      const savedEntryId = data.entry.id;
 
       // Clear the form
       setDiaryEntry('');
-      setMood('');
 
-      // Refresh entries if on entries view
-      if (currentView === 'entries') {
-        fetchEntries();
-      }
+      // Refresh entries list
+      await fetchEntries();
+
+      // Switch to entries view and show the newly created entry
+      setCurrentView('entries');
+      setSelectedEntryId(savedEntryId);
     } catch (error) {
       console.error('Save entry error:', error);
       alert('Failed to save entry. Please try again.');
@@ -274,7 +280,11 @@ function App() {
 
   // Fetch entries when switching to entries view or home view (for calendar indicators)
   useEffect(() => {
-    if ((currentView === 'entries' || currentView === 'home' || currentView === 'mood') && isAuthenticated && token) {
+    if (
+      (currentView === 'entries' || currentView === 'home' || currentView === 'mood') &&
+      isAuthenticated &&
+      token
+    ) {
       fetchEntries();
     }
   }, [currentView, fetchEntries, isAuthenticated, token]);
@@ -327,7 +337,7 @@ function App() {
         );
       });
     },
-    [getEntryDates]
+    [getEntryDates],
   );
 
   // Delete entry (without confirmation - confirmation should be done by caller)
@@ -548,33 +558,15 @@ function App() {
                   onChange={(e) => setDiaryEntry(e.target.value)}
                   className="min-h-[120px] w-full"
                 />
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <Button
-                    onClick={analyzeMood}
-                    disabled={!diaryEntry.trim()}
-                    variant="secondary"
-                    className="w-full sm:w-auto"
-                  >
-                    Analyze Mood
-                  </Button>
+                <div className="flex justify-end">
                   <Button
                     onClick={saveEntry}
                     disabled={!diaryEntry.trim()}
                     className="w-full sm:w-auto"
                   >
-                    Save Entry
+                    Publish Entry
                   </Button>
                 </div>
-                {mood && (
-                  <div className="p-3 bg-muted rounded-lg">
-                    <p className="text-sm">
-                      <strong>Detected Mood:</strong>
-                      <span className="ml-2 bg-primary text-primary-foreground px-2 py-1 rounded text-sm">
-                        {mood}
-                      </span>
-                    </p>
-                  </div>
-                )}
               </CardContent>
               <CardContent className="space-y-4">
                 <Calendar
@@ -613,13 +605,14 @@ function App() {
               ) : (
                 <div className="space-y-4">
                   {entries.map((entry) => {
-                    const preview = entry.content.length > 200 
-                      ? entry.content.substring(0, 200) + '...' 
-                      : entry.content;
-                    
+                    const preview =
+                      entry.content.length > 200
+                        ? entry.content.substring(0, 200) + '...'
+                        : entry.content;
+
                     return (
-                      <Card 
-                        key={entry.id} 
+                      <Card
+                        key={entry.id}
                         className="hover:shadow-md transition-shadow cursor-pointer"
                         onClick={() => setSelectedEntryId(entry.id)}
                       >
@@ -717,7 +710,11 @@ function App() {
                     variant="destructive"
                     size="sm"
                     onClick={async () => {
-                      if (confirm('Are you sure you want to delete this entry? This action cannot be undone.')) {
+                      if (
+                        confirm(
+                          'Are you sure you want to delete this entry? This action cannot be undone.',
+                        )
+                      ) {
                         await deleteEntry(selectedEntry.id);
                         setSelectedEntryId(null);
                         setSelectedEntry(null);
@@ -867,8 +864,10 @@ function MoodAnalytics({ entries }: { entries: Entry[] }) {
           <p className="text-sm text-muted-foreground">Avg Words</p>
           <p className="text-2xl font-bold">
             {Math.round(
-              entries.reduce((sum, e) => sum + e.content.split(/\s+/).filter((w) => w.length > 0).length, 0) /
-                entries.length || 0
+              entries.reduce(
+                (sum, e) => sum + e.content.split(/\s+/).filter((w) => w.length > 0).length,
+                0,
+              ) / entries.length || 0,
             )}
           </p>
         </div>
@@ -884,12 +883,12 @@ function MoodAnalytics({ entries }: { entries: Entry[] }) {
               cx="50%"
               cy="50%"
               labelLine={false}
-              label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+              label={({ name, percent }) => `${name} ${percent ? (percent * 100).toFixed(0) : 0}%`}
               outerRadius={80}
               fill="#8884d8"
               dataKey="value"
             >
-              {pieData.map((entry, index) => (
+              {pieData.map((_, index) => (
                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
               ))}
             </Pie>
@@ -933,12 +932,7 @@ function MoodAnalytics({ entries }: { entries: Entry[] }) {
               <Tooltip />
               <Legend />
               {Object.keys(moodCounts).map((mood, index) => (
-                <Bar
-                  key={mood}
-                  dataKey={mood}
-                  stackId="a"
-                  fill={COLORS[index % COLORS.length]}
-                />
+                <Bar key={mood} dataKey={mood} stackId="a" fill={COLORS[index % COLORS.length]} />
               ))}
             </BarChart>
           </ResponsiveContainer>

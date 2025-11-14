@@ -348,6 +348,9 @@ app.post('/api/entries', authenticateToken, async (req, res) => {
   }
 });
 
+// Import mood classifier
+const moodClassifier = require('../ml/moodClassifier');
+
 // Analyze mood from text
 app.post('/api/analyze-mood', async (req, res) => {
   try {
@@ -357,38 +360,12 @@ app.post('/api/analyze-mood', async (req, res) => {
       return res.status(400).json({ error: 'Text is required' });
     }
 
-    // Simple keyword-based mood analysis
-    const moodKeywords = {
-      happy: ['happy', 'joy', 'excited', 'great', 'wonderful', 'amazing', 'fantastic', 'love', 'loved', 'awesome', 'brilliant', 'excellent'],
-      sad: ['sad', 'depressed', 'down', 'upset', 'crying', 'tears', 'hurt', 'pain', 'lonely', 'empty', 'broken'],
-      angry: ['angry', 'mad', 'furious', 'rage', 'hate', 'annoyed', 'frustrated', 'irritated', 'pissed'],
-      anxious: ['anxious', 'worried', 'nervous', 'stressed', 'panic', 'fear', 'scared', 'afraid', 'tense'],
-      calm: ['calm', 'peaceful', 'relaxed', 'serene', 'tranquil', 'content', 'satisfied', 'chill'],
-      grateful: ['grateful', 'thankful', 'blessed', 'appreciate', 'gratitude', 'thankful', 'fortunate']
-    };
-
-    const textLower = text.toLowerCase();
-    let maxScore = 0;
-    let detectedMood = 'neutral';
-
-    for (const [mood, keywords] of Object.entries(moodKeywords)) {
-      const score = keywords.reduce((acc, keyword) => {
-        return acc + (textLower.includes(keyword) ? 1 : 0);
-      }, 0);
-
-      if (score > maxScore) {
-        maxScore = score;
-        detectedMood = mood;
-      }
-    }
-
-    // Calculate confidence score
-    const confidence = Math.min(maxScore / 3, 1); // Normalize to 0-1
+    // Use brain.js model (falls back to keyword matching if model not loaded)
+    const result = moodClassifier.analyze(text);
 
     res.json({
-      mood: detectedMood,
-      confidence: confidence,
-      keywords: maxScore > 0 ? moodKeywords[detectedMood].filter(keyword => textLower.includes(keyword)) : []
+      mood: result.mood,
+      confidence: result.confidence,
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
