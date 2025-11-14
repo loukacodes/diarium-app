@@ -15,6 +15,7 @@ interface MoodResult {
   mood: string;
   confidence: number;
 }
+import API_URL from '@/config/api';
 
 interface Entry {
   id: string;
@@ -74,7 +75,7 @@ function App() {
           ? { email: authForm.email, password: authForm.password }
           : { name: authForm.name, email: authForm.email, password: authForm.password };
 
-      const response = await fetch(`http://localhost:3000${endpoint}`, {
+      const response = await fetch(`${API_URL}${endpoint}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -145,7 +146,7 @@ function App() {
       // Verify token is still valid
       const verifyToken = async () => {
         try {
-          const response = await fetch('http://localhost:3000/api/auth/me', {
+          const response = await fetch(`${API_URL}/api/auth/me`, {
             headers: {
               Authorization: `Bearer ${savedToken}`,
             },
@@ -190,7 +191,7 @@ function App() {
 
   const analyzeMood = async (text: string): Promise<{ mood: string; moods: MoodResult[] }> => {
     try {
-      const response = await fetch('http://localhost:3000/api/analyze-mood', {
+      const response = await fetch(`${API_URL}/api/analyze-mood`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -230,7 +231,7 @@ function App() {
       const moodScore = moodAnalysis.moods[0]?.confidence || 0.5;
 
       // Save entry with analyzed moods
-      const response = await fetch('http://localhost:3000/api/entries', {
+      const response = await fetch(`${API_URL}/api/entries`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -272,7 +273,7 @@ function App() {
 
     setIsLoadingEntries(true);
     try {
-      const response = await fetch('http://localhost:3000/api/entries', {
+      const response = await fetch(`${API_URL}/api/entries`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -309,7 +310,7 @@ function App() {
       if (!selectedEntryId || !token) return;
 
       try {
-        const response = await fetch(`http://localhost:3000/api/entries/${selectedEntryId}`, {
+        const response = await fetch(`${API_URL}/api/entries/${selectedEntryId}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -357,7 +358,7 @@ function App() {
   // Delete entry (without confirmation - confirmation should be done by caller)
   const deleteEntry = async (entryId: string) => {
     try {
-      const response = await fetch(`http://localhost:3000/api/entries/${entryId}`, {
+      const response = await fetch(`${API_URL}/api/entries/${entryId}`, {
         method: 'DELETE',
         headers: {
           Authorization: `Bearer ${token}`,
