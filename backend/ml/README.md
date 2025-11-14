@@ -1,16 +1,16 @@
-# Local Mood Classification Model using brain.js
+# Local Mood Classification Model using Natural (NLP library)
 
-This directory contains the implementation for training and running a local mood classification model using brain.js.
+This directory contains the implementation for training and running a local mood classification model using Natural, an actively maintained NLP library for Node.js.
 
 ## Overview
 
-The mood classifier uses brain.js, a lightweight neural network library that runs entirely in Node.js. It provides better accuracy than simple keyword matching while remaining fast and privacy-preserving.
+The mood classifier uses Natural's BayesClassifier, which is specifically designed for text classification tasks. It provides better accuracy than simple keyword matching while remaining fast, lightweight, and privacy-preserving.
 
 ## Setup
 
 1. Install dependencies:
    ```bash
-   npm install brain.js
+   npm install natural
    ```
 
 2. Train the model:
@@ -26,29 +26,30 @@ The mood classifier uses brain.js, a lightweight neural network library that run
 ## How It Works
 
 ### Training (`train-model.js`)
-- Uses brain.js LSTM (Long Short-Term Memory) network
+- Uses Natural's BayesClassifier (Naive Bayes algorithm)
 - Trains on labeled text examples
 - Saves model to JSON file for reuse
 
 ### Classification (`moodClassifier.js`)
 - Loads trained model on server startup
-- Analyzes text and returns mood classification
+- Analyzes text and returns mood classification with confidence score
 - Falls back to keyword matching if model not found
 
 ### Usage in Server (`server.js`)
 - The `/api/analyze-mood` endpoint uses the classifier
-- Automatically uses brain.js model if available
+- Automatically uses Natural classifier if available
 - Falls back to keyword matching if model not loaded
 
 ## Training Data
 
-The training data in `train-model.js` includes examples for:
-- Happy
-- Sad
-- Anxious
-- Calm
-- Grateful
-- Angry
+The training data in `train-model.js` includes examples for 7 main emotions (based on hierarchical emotion model):
+- **Happy** - Optimistic, Trusting, Peaceful, Powerful, Accepted, Proud, Excited, Playful
+- **Sad** - Lonely, Vulnerable, Despair, Guilty, Depressed, Hurt
+- **Angry** - Let down, Humiliated, Bitter, Mad, Aggressive, Frustrated, Distant, Critical
+- **Fearful** - Scared, Anxious, Insecure, Weak, Rejected, Threatened
+- **Bad** - Bored, Busy, Stressed, Tired
+- **Surprised** - Startled, Confused, Amazed, Excited
+- **Disgusted** - Disapproving, Disappointed, Awful, Repelled
 
 **To improve accuracy:**
 - Add more training examples (aim for 50+ per mood)
@@ -60,15 +61,16 @@ The training data in `train-model.js` includes examples for:
 
 - **Accuracy**: Better than keyword matching, especially for nuanced text
 - **Speed**: Fast inference (< 10ms per prediction)
-- **Size**: Model file is typically < 1MB
+- **Size**: Model file is typically < 500KB
 - **Privacy**: Runs entirely locally, no data sent to external APIs
+- **Library**: Natural is actively maintained and widely used
 
 ## Improving the Model
 
 1. **Add more training data**: More examples = better accuracy
-2. **Adjust hyperparameters**: Modify `hiddenLayers`, `iterations`, `learningRate` in `train-model.js`
-3. **Retrain regularly**: As you collect more real user data, retrain the model
-4. **Fine-tune**: Use actual diary entries (with user permission) to improve accuracy
+2. **Retrain regularly**: As you collect more real user data, retrain the model
+3. **Fine-tune**: Use actual diary entries (with user permission) to improve accuracy
+4. **Experiment with tokenization**: Natural supports different tokenizers and stemmers
 
 ## Files
 
@@ -77,3 +79,12 @@ The training data in `train-model.js` includes examples for:
 - `models/mood-classifier.json` - Trained model (generated after training)
 - `README.md` - This file
 
+## Why Natural?
+
+Natural is chosen over brain.js because:
+- ✅ Actively maintained (regular updates)
+- ✅ Specifically designed for NLP/text classification
+- ✅ Lightweight with no native dependencies
+- ✅ Provides confidence scores
+- ✅ Well-documented and widely used
+- ✅ No build issues (pure JavaScript)

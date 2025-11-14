@@ -238,7 +238,14 @@ app.get('/api/entries', authenticateToken, async (req, res) => {
         createdAt: 'desc',
       },
     });
-    res.json(entries);
+
+    // Parse moods JSON string for each entry
+    const entriesWithParsedMoods = entries.map((entry) => ({
+      ...entry,
+      moods: entry.moods ? JSON.parse(entry.moods) : null,
+    }));
+
+    res.json(entriesWithParsedMoods);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -272,7 +279,13 @@ app.get('/api/entries/:id', authenticateToken, async (req, res) => {
       return res.status(403).json({ error: 'Access denied. This entry does not belong to you.' });
     }
 
-    res.json(entry);
+    // Parse moods JSON string
+    const entryWithParsedMoods = {
+      ...entry,
+      moods: entry.moods ? JSON.parse(entry.moods) : null,
+    };
+
+    res.json(entryWithParsedMoods);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -313,7 +326,7 @@ app.delete('/api/entries/:id', authenticateToken, async (req, res) => {
 // Create new entry
 app.post('/api/entries', authenticateToken, async (req, res) => {
   try {
-    const { content, mood, moodScore } = req.body;
+    const { content, mood, moods, moodScore } = req.body;
 
     // Validate input
     if (!content) {
@@ -325,6 +338,7 @@ app.post('/api/entries', authenticateToken, async (req, res) => {
       data: {
         content,
         mood: mood || null,
+        moods: moods ? JSON.stringify(moods) : null, // Store moods as JSON string
         moodScore: moodScore || null,
         userId: req.user.userId,
       },
@@ -341,7 +355,10 @@ app.post('/api/entries', authenticateToken, async (req, res) => {
 
     res.status(201).json({
       message: 'Entry created successfully',
-      entry,
+      entry: {
+        ...entry,
+        moods: entry.moods ? JSON.parse(entry.moods) : null, // Parse moods for response
+      },
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -360,12 +377,13 @@ app.post('/api/analyze-mood', async (req, res) => {
       return res.status(400).json({ error: 'Text is required' });
     }
 
-    // Use brain.js model (falls back to keyword matching if model not loaded)
+    // Use Natural model (falls back to keyword matching if model not loaded)
     const result = moodClassifier.analyze(text);
 
     res.json({
-      mood: result.mood,
+      mood: result.mood, // Primary mood (for backward compatibility)
       confidence: result.confidence,
+      moods: result.moods || [{ mood: result.mood, confidence: result.confidence }], // Top 3 moods
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
