@@ -25,6 +25,7 @@ databases:
   - name: diarium-db
     plan: free # Free tier - 90 day data retention
     # plan: starter # $7/month - includes backups (uncomment for production)
+    region: frankfurt
     databaseName: diarium
     user: diarium
 
