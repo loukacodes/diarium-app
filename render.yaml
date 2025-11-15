@@ -1,0 +1,31 @@
+services:
+  - type: web
+    name: diarium-backend
+    env: node
+    rootDir: backend # Specify that the service code is in the backend folder
+    plan: free # Free tier - spins down after 15min inactivity
+    # plan: starter # $7/month - always on, no cold starts (uncomment for production)
+    region: frankfurt # Closest to Stockholm, Sweden
+    buildCommand: npm install && npx prisma generate && npx prisma db push --accept-data-loss
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: diarium-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+        sync: false # Don't sync this secret across environments
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+
+databases:
+  - name: diarium-db
+    plan: free # Free tier - 90 day data retention
+    # plan: starter # $7/month - includes backups (uncomment for production)
+    databaseName: diarium
+    user: diarium
+
