@@ -16,7 +16,6 @@ services:
           property: connectionString
       - key: JWT_SECRET
         generateValue: true
-        sync: false # Don't sync this secret across environments
       - key: NODE_ENV
         value: production
       - key: PORT
