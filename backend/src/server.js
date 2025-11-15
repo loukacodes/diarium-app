@@ -249,7 +249,14 @@ app.get('/api/entries', authenticateToken, async (req, res) => {
         createdAt: 'desc',
       },
     });
-    res.json(entries);
+
+    // Parse moods JSON string for each entry
+    const entriesWithParsedMoods = entries.map((entry) => ({
+      ...entry,
+      moods: entry.moods ? JSON.parse(entry.moods) : null,
+    }));
+
+    res.json(entriesWithParsedMoods);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -283,7 +290,13 @@ app.get('/api/entries/:id', authenticateToken, async (req, res) => {
       return res.status(403).json({ error: 'Access denied. This entry does not belong to you.' });
     }
 
-    res.json(entry);
+    // Parse moods JSON string
+    const entryWithParsedMoods = {
+      ...entry,
+      moods: entry.moods ? JSON.parse(entry.moods) : null,
+    };
+
+    res.json(entryWithParsedMoods);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -324,7 +337,7 @@ app.delete('/api/entries/:id', authenticateToken, async (req, res) => {
 // Create new entry
 app.post('/api/entries', authenticateToken, async (req, res) => {
   try {
-    const { content, mood, moodScore } = req.body;
+    const { content, mood, moods, moodScore } = req.body;
 
     // Validate input
     if (!content) {
@@ -336,6 +349,7 @@ app.post('/api/entries', authenticateToken, async (req, res) => {
       data: {
         content,
         mood: mood || null,
+        moods: moods ? JSON.stringify(moods) : null, // Store moods as JSON string
         moodScore: moodScore || null,
         userId: req.user.userId,
       },
@@ -352,12 +366,18 @@ app.post('/api/entries', authenticateToken, async (req, res) => {
 
     res.status(201).json({
       message: 'Entry created successfully',
-      entry,
+      entry: {
+        ...entry,
+        moods: entry.moods ? JSON.parse(entry.moods) : null, // Parse moods for response
+      },
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
+
+// Import mood classifier
+const moodClassifier = require('../ml/moodClassifier');
 
 // Analyze mood from text
 app.post('/api/analyze-mood', async (req, res) => {
@@ -368,38 +388,13 @@ app.post('/api/analyze-mood', async (req, res) => {
       return res.status(400).json({ error: 'Text is required' });
     }
 
-    // Simple keyword-based mood analysis
-    const moodKeywords = {
-      happy: ['happy', 'joy', 'excited', 'great', 'wonderful', 'amazing', 'fantastic', 'love', 'loved', 'awesome', 'brilliant', 'excellent'],
-      sad: ['sad', 'depressed', 'down', 'upset', 'crying', 'tears', 'hurt', 'pain', 'lonely', 'empty', 'broken'],
-      angry: ['angry', 'mad', 'furious', 'rage', 'hate', 'annoyed', 'frustrated', 'irritated', 'pissed'],
-      anxious: ['anxious', 'worried', 'nervous', 'stressed', 'panic', 'fear', 'scared', 'afraid', 'tense'],
-      calm: ['calm', 'peaceful', 'relaxed', 'serene', 'tranquil', 'content', 'satisfied', 'chill'],
-      grateful: ['grateful', 'thankful', 'blessed', 'appreciate', 'gratitude', 'thankful', 'fortunate']
-    };
-
-    const textLower = text.toLowerCase();
-    let maxScore = 0;
-    let detectedMood = 'neutral';
-
-    for (const [mood, keywords] of Object.entries(moodKeywords)) {
-      const score = keywords.reduce((acc, keyword) => {
-        return acc + (textLower.includes(keyword) ? 1 : 0);
-      }, 0);
-
-      if (score > maxScore) {
-        maxScore = score;
-        detectedMood = mood;
-      }
-    }
-
-    // Calculate confidence score
-    const confidence = Math.min(maxScore / 3, 1); // Normalize to 0-1
+    // Use Natural model (falls back to keyword matching if model not loaded)
+    const result = moodClassifier.analyze(text);
 
     res.json({
-      mood: detectedMood,
-      confidence: confidence,
-      keywords: maxScore > 0 ? moodKeywords[detectedMood].filter(keyword => textLower.includes(keyword)) : []
+      mood: result.mood, // Primary mood (for backward compatibility)
+      confidence: result.confidence,
+      moods: result.moods || [{ mood: result.mood, confidence: result.confidence }], // Top 3 moods
     });
   } catch (error) {
     res.status(500).json({ error: error.message });

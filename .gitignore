@@ -115,3 +115,9 @@ web-build/
 
 # macOS
 .DS_Store
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+backend/prisma/dev.db

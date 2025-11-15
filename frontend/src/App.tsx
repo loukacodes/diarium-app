@@ -10,12 +10,18 @@ import BottomNav from '@/components/ui/bottom-nav';
 import DesktopNav from '@/components/ui/desktop-nav';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { ArrowLeft } from 'lucide-react';
+
+interface MoodResult {
+  mood: string;
+  confidence: number;
+}
 import API_URL from '@/config/api';
 
 interface Entry {
   id: string;
   content: string;
   mood: string | null;
+  moods: MoodResult[] | null; // Top 3 moods with confidence
   moodScore: number | null;
   createdAt: string;
   updatedAt: string;
@@ -24,7 +30,6 @@ interface Entry {
 
 function App() {
   const [diaryEntry, setDiaryEntry] = useState<string>('');
-  const [mood, setMood] = useState<string>('');
 
   // Authentication state
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
@@ -105,7 +110,6 @@ function App() {
     setUser(null);
     setToken('');
     setDiaryEntry('');
-    setMood('');
 
     // Clear localStorage
     localStorage.removeItem('token');
@@ -185,14 +189,14 @@ function App() {
     }
   }, []);
 
-  const analyzeMood = async () => {
+  const analyzeMood = async (text: string): Promise<{ mood: string; moods: MoodResult[] }> => {
     try {
       const response = await fetch(`${API_URL}/api/analyze-mood`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ text: diaryEntry }),
+        body: JSON.stringify({ text }),
       });
 
       if (!response.ok) {
@@ -200,18 +204,33 @@ function App() {
       }
 
       const data = await response.json();
-      setMood(data.mood);
+      return {
+        mood: data.mood,
+        moods: data.moods || [{ mood: data.mood, confidence: data.confidence }],
+      };
     } catch (error) {
       console.error('Mood analysis error:', error);
       // Fallback to random mood if API fails
-      const moods = ['Happy', 'Sad', 'Excited', 'Calm', 'Stressed', 'Grateful'];
-      const randomMood = moods[Math.floor(Math.random() * moods.length)];
-      setMood(randomMood);
+      const moods = ['happy', 'sad', 'excited', 'calm', 'anxious', 'grateful'];
+      const fallbackMood = moods[Math.floor(Math.random() * moods.length)];
+      return {
+        mood: fallbackMood,
+        moods: [{ mood: fallbackMood, confidence: 0.5 }],
+      };
     }
   };
 
   const saveEntry = async () => {
+    if (!diaryEntry.trim()) {
+      return;
+    }
+
     try {
+      // Analyze mood first
+      const moodAnalysis = await analyzeMood(diaryEntry);
+      const moodScore = moodAnalysis.moods[0]?.confidence || 0.5;
+
+      // Save entry with analyzed moods
       const response = await fetch(`${API_URL}/api/entries`, {
         method: 'POST',
         headers: {
@@ -220,8 +239,9 @@ function App() {
         },
         body: JSON.stringify({
           content: diaryEntry,
-          mood: mood,
-          moodScore: Math.random(), // Mock score for now
+          mood: moodAnalysis.mood, // Primary mood for backward compatibility
+          moods: moodAnalysis.moods, // Top 3 moods
+          moodScore: moodScore,
         }),
       });
 
@@ -229,17 +249,18 @@ function App() {
         throw new Error('Failed to save entry');
       }
 
-      await response.json();
-      alert('Entry saved successfully!');
+      const data = await response.json();
+      const savedEntryId = data.entry.id;
 
       // Clear the form
       setDiaryEntry('');
-      setMood('');
 
-      // Refresh entries if on entries view
-      if (currentView === 'entries') {
-        fetchEntries();
-      }
+      // Refresh entries list
+      await fetchEntries();
+
+      // Switch to entries view and show the newly created entry
+      setCurrentView('entries');
+      setSelectedEntryId(savedEntryId);
     } catch (error) {
       console.error('Save entry error:', error);
       alert('Failed to save entry. Please try again.');
@@ -552,33 +573,15 @@ function App() {
                   onChange={(e) => setDiaryEntry(e.target.value)}
                   className="min-h-[120px] w-full"
                 />
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <Button
-                    onClick={analyzeMood}
-                    disabled={!diaryEntry.trim()}
-                    variant="secondary"
-                    className="w-full sm:w-auto"
-                  >
-                    Analyze Mood
-                  </Button>
+                <div className="flex justify-end">
                   <Button
                     onClick={saveEntry}
                     disabled={!diaryEntry.trim()}
                     className="w-full sm:w-auto"
                   >
-                    Save Entry
+                    Publish Entry
                   </Button>
                 </div>
-                {mood && (
-                  <div className="p-3 bg-muted rounded-lg">
-                    <p className="text-sm">
-                      <strong>Detected Mood:</strong>
-                      <span className="ml-2 bg-primary text-primary-foreground px-2 py-1 rounded text-sm">
-                        {mood}
-                      </span>
-                    </p>
-                  </div>
-                )}
               </CardContent>
               <CardContent className="space-y-4">
                 <Calendar
@@ -633,13 +636,24 @@ function App() {
                             <CardTitle className="text-base sm:text-lg">
                               {formatDate(entry.createdAt)}
                             </CardTitle>
-                            <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                            <div className="flex items-center gap-3 text-sm text-muted-foreground flex-wrap">
                               <span>{getWordCount(entry.content)} words</span>
-                              {entry.mood && (
-                                <span className="bg-primary/10 text-primary px-2 py-1 rounded text-xs">
+                              {entry.moods && entry.moods.length > 0 ? (
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  {entry.moods.slice(0, 3).map((m, idx) => (
+                                    <span
+                                      key={idx}
+                                      className="bg-primary/10 text-primary px-2 py-1 rounded text-xs capitalize"
+                                    >
+                                      {m.mood} ({(m.confidence * 100).toFixed(3)}%)
+                                    </span>
+                                  ))}
+                                </div>
+                              ) : entry.mood ? (
+                                <span className="bg-primary/10 text-primary px-2 py-1 rounded text-xs capitalize">
                                   {entry.mood}
                                 </span>
-                              )}
+                              ) : null}
                             </div>
                           </div>
                         </CardHeader>
@@ -702,13 +716,24 @@ function App() {
                 {formatDate(selectedEntry.createdAt)}
               </CardTitle>
               <CardDescription className="text-sm sm:text-base">
-                <div className="flex items-center gap-3 mt-2">
+                <div className="flex items-center gap-3 mt-2 flex-wrap">
                   <span>{getWordCount(selectedEntry.content)} words</span>
-                  {selectedEntry.mood && (
-                    <span className="bg-primary/10 text-primary px-2 py-1 rounded text-xs">
+                  {selectedEntry.moods && selectedEntry.moods.length > 0 ? (
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {selectedEntry.moods.slice(0, 3).map((m, idx) => (
+                        <span
+                          key={idx}
+                          className="bg-primary/10 text-primary px-2 py-1 rounded text-xs capitalize"
+                        >
+                          {m.mood} ({(m.confidence * 100).toFixed(3)}%)
+                        </span>
+                      ))}
+                    </div>
+                  ) : selectedEntry.mood ? (
+                    <span className="bg-primary/10 text-primary px-2 py-1 rounded text-xs capitalize">
                       {selectedEntry.mood}
                     </span>
-                  )}
+                  ) : null}
                 </div>
               </CardDescription>
             </CardHeader>
@@ -876,8 +901,10 @@ function MoodAnalytics({ entries }: { entries: Entry[] }) {
           <p className="text-sm text-muted-foreground">Avg Words</p>
           <p className="text-2xl font-bold">
             {Math.round(
-              entries.reduce((sum, e) => sum + e.content.split(/\s+/).filter((w) => w.length > 0).length, 0) /
-                entries.length || 0
+              entries.reduce(
+                (sum, e) => sum + e.content.split(/\s+/).filter((w) => w.length > 0).length,
+                0,
+              ) / entries.length || 0,
             )}
           </p>
         </div>
@@ -942,12 +969,7 @@ function MoodAnalytics({ entries }: { entries: Entry[] }) {
               <Tooltip />
               <Legend />
               {Object.keys(moodCounts).map((mood, index) => (
-                <Bar
-                  key={mood}
-                  dataKey={mood}
-                  stackId="a"
-                  fill={COLORS[index % COLORS.length]}
-                />
+                <Bar key={mood} dataKey={mood} stackId="a" fill={COLORS[index % COLORS.length]} />
               ))}
             </BarChart>
           </ResponsiveContainer>

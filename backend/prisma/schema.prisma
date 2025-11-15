@@ -19,7 +19,8 @@ model User {
 model Entry {
   id        String   @id @default(cuid())
   content   String
-  mood      String?
+  mood      String?  // Primary mood (for backward compatibility)
+  moods     String?  // JSON array of top 3 moods: [{"mood":"happy","confidence":0.8},...]
   moodScore Float?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
