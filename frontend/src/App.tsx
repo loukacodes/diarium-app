@@ -86,6 +86,12 @@ function App() {
     setSelectedEntry(null);
   };
 
+  const handleNavigateHome = () => {
+    setCurrentView('home');
+    setSelectedEntryId(null);
+    setSelectedEntry(null);
+  };
+
   const handleDeleteEntry = async (entryId: string) => {
     await deleteEntry(entryId);
     setSelectedEntryId(null);
@@ -107,7 +113,11 @@ function App() {
   return (
     <div className="min-h-screen bg-background p-2 sm:p-4 pb-20 sm:pb-4 mt-16">
       <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6">
-        <AppHeader isDarkMode={isDarkMode} onToggleDarkMode={toggleDarkMode} />
+        <AppHeader
+          isDarkMode={isDarkMode}
+          onToggleDarkMode={toggleDarkMode}
+          onNavigateHome={handleNavigateHome}
+        />
 
         {/* Conditional Views */}
         {currentView === 'home' && (

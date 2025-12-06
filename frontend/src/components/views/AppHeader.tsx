@@ -3,12 +3,22 @@ import { Button } from '@/components/ui/button';
 interface AppHeaderProps {
   isDarkMode: boolean;
   onToggleDarkMode: () => void;
+  onNavigateHome: () => void;
 }
 
-export default function AppHeader({ isDarkMode, onToggleDarkMode }: AppHeaderProps) {
+export default function AppHeader({
+  isDarkMode,
+  onToggleDarkMode,
+  onNavigateHome,
+}: AppHeaderProps) {
   return (
     <div className="flex items-center justify-between z-10 fixed top-0 left-0 right-0 bg-background border-b border-border p-4">
-      <div className="text-2xl sm:text-4xl font-bold">Diarium</div>
+      <div
+        className="text-2xl sm:text-4xl font-bold cursor-pointer hover:opacity-80 transition-opacity"
+        onClick={onNavigateHome}
+      >
+        Diarium
+      </div>
       <Button
         variant="outline"
         size="sm"
