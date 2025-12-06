@@ -115,7 +115,6 @@ function App() {
             token={token}
             onEntrySaved={handleEntrySaved}
             onViewChange={setCurrentView}
-            entries={entries}
             hasEntry={hasEntry}
           />
         )}

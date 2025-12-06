@@ -5,23 +5,15 @@ import { Textarea } from '@/components/ui/textarea';
 import { Calendar } from '@/components/ui/calendar';
 import { analyzeMood } from '@/services/moodService';
 import API_URL from '@/config/api';
-import type { Entry } from '@/types';
 
 interface HomeViewProps {
   token: string;
   onEntrySaved: (entryId: string) => void;
   onViewChange: (view: 'home' | 'entries' | 'mood' | 'profile') => void;
-  entries: Entry[];
   hasEntry: (date: Date) => boolean;
 }
 
-export default function HomeView({
-  token,
-  onEntrySaved,
-  onViewChange,
-  entries,
-  hasEntry,
-}: HomeViewProps) {
+export default function HomeView({ token, onEntrySaved, onViewChange, hasEntry }: HomeViewProps) {
   const [diaryEntry, setDiaryEntry] = useState<string>('');
   const [date, setDate] = useState<Date | undefined>(new Date());
 
@@ -91,11 +83,7 @@ export default function HomeView({
             className="min-h-[120px] w-full"
           />
           <div className="flex justify-end">
-            <Button
-              onClick={saveEntry}
-              disabled={!diaryEntry.trim()}
-              className="w-full sm:w-auto"
-            >
+            <Button onClick={saveEntry} disabled={!diaryEntry.trim()} className="w-full sm:w-auto">
               Publish Entry
             </Button>
           </div>
