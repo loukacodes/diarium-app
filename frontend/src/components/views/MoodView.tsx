@@ -1,4 +1,7 @@
+import { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
 import {
   LineChart,
   Line,
@@ -15,14 +18,62 @@ import {
   Cell,
 } from 'recharts';
 import type { Entry } from '@/types';
+import type { DateRange } from 'react-day-picker';
+
+// Helper function to calculate days difference
+function getDaysDifference(date1: Date, date2: Date): number {
+  const diffTime = Math.abs(date2.getTime() - date1.getTime());
+  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+}
 
 interface MoodViewProps {
   entries: Entry[];
 }
 
 export default function MoodView({ entries }: MoodViewProps) {
-  // Process entries for charts
-  const moodCounts = entries.reduce((acc, entry) => {
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(() => {
+    // Default to last 30 days
+    const end = new Date();
+    const start = new Date();
+    start.setDate(start.getDate() - 30);
+    return { from: start, to: end };
+  });
+
+  // Filter entries based on date range
+  const filteredEntries = useMemo(() => {
+    if (!dateRange?.from) return entries;
+
+    return entries.filter((entry) => {
+      const entryDate = new Date(entry.createdAt);
+      entryDate.setHours(0, 0, 0, 0);
+
+      const fromDate = new Date(dateRange.from!);
+      fromDate.setHours(0, 0, 0, 0);
+
+      if (dateRange.to) {
+        const toDate = new Date(dateRange.to);
+        toDate.setHours(23, 59, 59, 999);
+        return entryDate >= fromDate && entryDate <= toDate;
+      }
+
+      return entryDate >= fromDate;
+    });
+  }, [entries, dateRange]);
+
+  // Preset date range handlers
+  const setPresetRange = (days: number | null) => {
+    if (days === null) {
+      // All time
+      setDateRange(undefined);
+    } else {
+      const end = new Date();
+      const start = new Date();
+      start.setDate(start.getDate() - days);
+      setDateRange({ from: start, to: end });
+    }
+  };
+  // Process entries for charts (using filtered entries)
+  const moodCounts = filteredEntries.reduce((acc, entry) => {
     const mood = entry.mood || 'Unknown';
     acc[mood] = (acc[mood] || 0) + 1;
     return acc;
@@ -33,11 +84,10 @@ export default function MoodView({ entries }: MoodViewProps) {
     value,
   }));
 
-  // Time series data (last 30 days or all entries)
-  const timeSeriesData = entries
+  // Time series data (using filtered entries)
+  const timeSeriesData = filteredEntries
     .slice()
     .reverse()
-    .slice(0, 30)
     .map((entry) => {
       const date = new Date(entry.createdAt);
       return {
@@ -49,8 +99,8 @@ export default function MoodView({ entries }: MoodViewProps) {
     })
     .sort((a, b) => a.fullDate.getTime() - b.fullDate.getTime());
 
-  // Mood distribution over time (weekly)
-  const weeklyData = entries.reduce((acc, entry) => {
+  // Mood distribution over time (weekly) - using filtered entries
+  const weeklyData = filteredEntries.reduce((acc, entry) => {
     const date = new Date(entry.createdAt);
     const weekStart = new Date(date);
     weekStart.setDate(date.getDate() - date.getDay()); // Start of week (Sunday)
@@ -83,6 +133,67 @@ export default function MoodView({ entries }: MoodViewProps) {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {/* Date Range Selector */}
+          <div className="mb-6 space-y-4">
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant={!dateRange ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setPresetRange(null)}
+              >
+                All Time
+              </Button>
+              <Button
+                variant={
+                  dateRange?.from &&
+                  dateRange?.to &&
+                  getDaysDifference(dateRange.from, dateRange.to) === 6
+                    ? 'default'
+                    : 'outline'
+                }
+                size="sm"
+                onClick={() => setPresetRange(7)}
+              >
+                Last 7 Days
+              </Button>
+              <Button
+                variant={
+                  dateRange?.from &&
+                  dateRange?.to &&
+                  getDaysDifference(dateRange.from, dateRange.to) === 29
+                    ? 'default'
+                    : 'outline'
+                }
+                size="sm"
+                onClick={() => setPresetRange(30)}
+              >
+                Last 30 Days
+              </Button>
+              <Button
+                variant={
+                  dateRange?.from &&
+                  dateRange?.to &&
+                  getDaysDifference(dateRange.from, dateRange.to) === 89
+                    ? 'default'
+                    : 'outline'
+                }
+                size="sm"
+                onClick={() => setPresetRange(90)}
+              >
+                Last 90 Days
+              </Button>
+            </div>
+            <div className="flex items-center gap-4">
+              <Calendar
+                mode="range"
+                selected={dateRange}
+                onSelect={setDateRange}
+                numberOfMonths={1}
+                className="rounded-md border"
+              />
+            </div>
+          </div>
+
           {entries.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <p>No entries yet. Start writing to see your mood trends!</p>
@@ -93,7 +204,7 @@ export default function MoodView({ entries }: MoodViewProps) {
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 <div className="bg-muted p-4 rounded-lg">
                   <p className="text-sm text-muted-foreground">Total Entries</p>
-                  <p className="text-2xl font-bold">{entries.length}</p>
+                  <p className="text-2xl font-bold">{filteredEntries.length}</p>
                 </div>
                 <div className="bg-muted p-4 rounded-lg">
                   <p className="text-sm text-muted-foreground">Unique Moods</p>
@@ -109,10 +220,10 @@ export default function MoodView({ entries }: MoodViewProps) {
                   <p className="text-sm text-muted-foreground">Avg Words</p>
                   <p className="text-2xl font-bold">
                     {Math.round(
-                      entries.reduce(
+                      filteredEntries.reduce(
                         (sum, e) => sum + e.content.split(/\s+/).filter((w) => w.length > 0).length,
                         0,
-                      ) / entries.length || 0,
+                      ) / filteredEntries.length || 0,
                     )}
                   </p>
                 </div>
@@ -139,7 +250,7 @@ export default function MoodView({ entries }: MoodViewProps) {
                       </Pie>
                       <Tooltip
                         formatter={(value: number, name: string) => [
-                          `${value} (${((value / entries.length) * 100).toFixed(0)}%)`,
+                          `${value} (${((value / filteredEntries.length) * 100).toFixed(0)}%)`,
                           name,
                         ]}
                         contentStyle={{ fontSize: '12px', padding: '8px' }}
@@ -151,7 +262,7 @@ export default function MoodView({ entries }: MoodViewProps) {
                         iconSize={12}
                         formatter={(value, entry) => {
                           const entryValue = entry?.payload?.value ?? 0;
-                          const percent = ((entryValue / entries.length) * 100).toFixed(0);
+                          const percent = ((entryValue / filteredEntries.length) * 100).toFixed(0);
                           return `${value} (${percent}%)`;
                         }}
                       />
@@ -263,4 +374,3 @@ export default function MoodView({ entries }: MoodViewProps) {
     </div>
   );
 }
-
