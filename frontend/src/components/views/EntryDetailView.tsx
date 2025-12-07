@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft } from 'lucide-react';
-import { getWordCount, formatDate } from '@/utils/helpers';
+import { getWordCount, formatDate, formatConfidence } from '@/utils/helpers';
 import type { Entry } from '@/types';
 
 interface EntryDetailViewProps {
@@ -38,7 +38,7 @@ export default function EntryDetailView({ entry, onBack, onDelete }: EntryDetail
                     key={idx}
                     className="bg-primary/10 text-primary px-2 py-1 rounded text-xs capitalize"
                   >
-                    {m.mood} ({m.confidence * 100}%)
+                    {m.mood} ({formatConfidence(m.confidence)}%)
                   </span>
                 ))}
               </div>
