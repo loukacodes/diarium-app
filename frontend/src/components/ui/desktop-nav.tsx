@@ -11,7 +11,6 @@ interface DesktopNavProps {
 interface NavItem {
   id: 'home' | 'entries' | 'mood' | 'profile';
   label: string;
-  icon: string;
 }
 
 const DesktopNav: React.FC<DesktopNavProps> = ({ className, currentView, onViewChange }) => {
@@ -19,33 +18,23 @@ const DesktopNav: React.FC<DesktopNavProps> = ({ className, currentView, onViewC
     {
       id: 'home',
       label: 'Home',
-      icon: '🏠',
     },
     {
       id: 'entries',
       label: 'Entries',
-      icon: '📝',
     },
     {
       id: 'mood',
       label: 'Mood',
-      icon: '😊',
     },
     {
       id: 'profile',
       label: 'Profile',
-      icon: '👤',
     },
   ];
 
   return (
-    <nav
-      className={cn(
-        'hidden sm:flex items-center gap-2',
-        'border-b border-border pb-4 mb-4',
-        className,
-      )}
-    >
+    <nav className={cn('flex items-center gap-2', className)}>
       {navItems.map((item) => {
         const isActive = currentView === item.id;
         return (
@@ -53,12 +42,8 @@ const DesktopNav: React.FC<DesktopNavProps> = ({ className, currentView, onViewC
             key={item.id}
             variant={isActive ? 'default' : 'ghost'}
             onClick={() => onViewChange(item.id)}
-            className={cn(
-              'flex items-center gap-2',
-              isActive && 'bg-primary text-primary-foreground',
-            )}
+            className={cn('flex items-center gap-2')}
           >
-            <span>{item.icon}</span>
             <span>{item.label}</span>
           </Button>
         );
@@ -68,4 +53,3 @@ const DesktopNav: React.FC<DesktopNavProps> = ({ className, currentView, onViewC
 };
 
 export default DesktopNav;
-

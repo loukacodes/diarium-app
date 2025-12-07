@@ -92,6 +92,15 @@ function App() {
     setSelectedEntry(null);
   };
 
+  const handleViewChange = (view: 'home' | 'entries' | 'mood' | 'profile') => {
+    setCurrentView(view);
+    // Clear selected entry when navigating away from entries view
+    if (view !== 'entries') {
+      setSelectedEntryId(null);
+      setSelectedEntry(null);
+    }
+  };
+
   const handleDeleteEntry = async (entryId: string) => {
     await deleteEntry(entryId);
     setSelectedEntryId(null);
@@ -111,12 +120,14 @@ function App() {
 
   // Main app (authenticated)
   return (
-    <div className="min-h-screen bg-background p-2 sm:p-4 pb-20 sm:pb-4 mt-16">
+    <div className="min-h-screen bg-background p-2 sm:p-4 pb-20 sm:pb-4 mt-16 sm:mt-24">
       <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6">
         <AppHeader
           isDarkMode={isDarkMode}
           onToggleDarkMode={toggleDarkMode}
           onNavigateHome={handleNavigateHome}
+          currentView={currentView}
+          onViewChange={handleViewChange}
         />
 
         {/* Conditional Views */}
@@ -124,7 +135,7 @@ function App() {
           <HomeView
             token={token}
             onEntrySaved={handleEntrySaved}
-            onViewChange={setCurrentView}
+            onViewChange={handleViewChange}
             hasEntry={hasEntry}
           />
         )}
@@ -151,7 +162,7 @@ function App() {
       </div>
 
       {/* Bottom Navigation - Mobile Only */}
-      <BottomNav currentView={currentView} onViewChange={setCurrentView} />
+      <BottomNav currentView={currentView} onViewChange={handleViewChange} />
     </div>
   );
 }
