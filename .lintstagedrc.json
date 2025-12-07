@@ -1,0 +1,5 @@
+{
+  "frontend/**/*.{ts,tsx}": [
+    "bash -c 'cd frontend && npx eslint --fix --max-warnings=0 \"$@\"' --"
+  ]
+}

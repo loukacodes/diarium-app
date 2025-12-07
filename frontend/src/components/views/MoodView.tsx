@@ -138,7 +138,7 @@ export default function MoodView({ entries }: MoodViewProps) {
                         ))}
                       </Pie>
                       <Tooltip
-                        formatter={(value: number, name: string, props: any) => [
+                        formatter={(value: number, name: string) => [
                           `${value} (${((value / entries.length) * 100).toFixed(0)}%)`,
                           name,
                         ]}
@@ -149,8 +149,9 @@ export default function MoodView({ entries }: MoodViewProps) {
                         align="center"
                         wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }}
                         iconSize={12}
-                        formatter={(value, entry: any) => {
-                          const percent = ((entry.payload.value / entries.length) * 100).toFixed(0);
+                        formatter={(value, entry) => {
+                          const entryValue = entry?.payload?.value ?? 0;
+                          const percent = ((entryValue / entries.length) * 100).toFixed(0);
                           return `${value} (${percent}%)`;
                         }}
                       />
