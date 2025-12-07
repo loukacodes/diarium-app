@@ -27,3 +27,37 @@ export function formatConfidence(confidence: number): string {
   return rounded.toFixed(1);
 }
 
+export function calculateStreak(entries: { createdAt: string }[]): number {
+  if (entries.length === 0) return 0;
+
+  // Get unique dates that have entries (normalized to start of day)
+  const entryDates = new Set<string>();
+  entries.forEach((entry) => {
+    const date = new Date(entry.createdAt);
+    date.setHours(0, 0, 0, 0);
+    const dateKey = date.toISOString().split('T')[0];
+    entryDates.add(dateKey);
+  });
+
+  // Calculate streak by checking consecutive days backwards from today
+  let streak = 0;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  // Check days backwards from today
+  for (let i = 0; i < 365; i++) {
+    const checkDate = new Date(today);
+    checkDate.setDate(today.getDate() - i);
+    const dateKey = checkDate.toISOString().split('T')[0];
+
+    if (entryDates.has(dateKey)) {
+      streak++;
+    } else {
+      // Break streak if we find a day without an entry
+      break;
+    }
+  }
+
+  return streak;
+}
+

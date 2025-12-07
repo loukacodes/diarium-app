@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Textarea } from '@/components/ui/textarea';
 import { Calendar } from '@/components/ui/calendar';
 import { analyzeMood } from '@/services/moodService';
-import { getWordCount, formatDate, formatConfidence } from '@/utils/helpers';
+import { getWordCount, formatDate, formatConfidence, calculateStreak } from '@/utils/helpers';
 import API_URL from '@/config/api';
 import type { Entry } from '@/types';
 
@@ -31,6 +31,9 @@ export default function HomeView({
   const handleDateSelect = (selectedDate: Date | undefined) => {
     setDate(selectedDate);
   };
+
+  // Calculate current streak
+  const currentStreak = useMemo(() => calculateStreak(entries), [entries]);
 
   // Filter entries for the selected date
   const entriesForDate = useMemo(() => {
@@ -94,6 +97,20 @@ export default function HomeView({
 
   return (
     <>
+      {/* Streak Display */}
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex items-center justify-center gap-4">
+            <div className="text-center">
+              <p className="text-3xl font-bold text-primary">{currentStreak}</p>
+              <p className="text-sm text-muted-foreground">
+                {currentStreak === 1 ? 'day' : 'days'} streak 🔥
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Diary Entry Section */}
       <Card>
         <CardHeader>
