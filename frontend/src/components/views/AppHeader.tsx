@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button';
 import DesktopNav from '@/components/ui/desktop-nav';
+import { SunIcon, MoonIcon } from '@/components/ui/nav-icons';
 
 interface AppHeaderProps {
   isDarkMode: boolean;
@@ -20,7 +21,7 @@ export default function AppHeader({
     <div className="z-10 fixed top-0 left-0 right-0 bg-background border-b border-border">
       <div className="flex justify-between items-center p-4">
         {/* Left section - Logo */}
-        <div className="w-1/3">
+        <div className="w-1/3 flex justify-start">
           <div
             className="text-2xl sm:text-4xl font-bold cursor-pointer hover:opacity-80 transition-opacity inline-block"
             onClick={onNavigateHome}
@@ -35,14 +36,14 @@ export default function AppHeader({
         </div>
 
         {/* Right section - Dark mode toggle */}
-        <div className="w-1/3 flex justify-center">
+        <div className="w-1/3 flex justify-end">
           <Button
             variant="outline"
             size="sm"
             onClick={onToggleDarkMode}
             className="flex items-center gap-2"
           >
-            {isDarkMode ? '☀️' : '🌙'}
+            {isDarkMode ? <SunIcon size={18} /> : <MoonIcon size={18} />}
           </Button>
         </div>
       </div>

@@ -5,6 +5,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Calendar } from '@/components/ui/calendar';
 import { analyzeMood } from '@/services/moodService';
 import { getWordCount, formatDate, formatConfidence, calculateStreak } from '@/utils/helpers';
+import { FlameIcon } from '@/components/ui/nav-icons';
 import API_URL from '@/config/api';
 import type { Entry } from '@/types';
 
@@ -103,9 +104,10 @@ export default function HomeView({
           <div className="flex items-center justify-center gap-4">
             <div className="text-center">
               <p className="text-3xl font-bold text-primary">{currentStreak}</p>
-              <p className="text-sm text-muted-foreground">
-                {currentStreak === 1 ? 'day' : 'days'} streak 🔥
-              </p>
+              <div className="flex items-center justify-center gap-1 text-sm text-muted-foreground">
+                <span>{currentStreak === 1 ? 'day' : 'days'} streak</span>
+                <FlameIcon size={16} />
+              </div>
             </div>
           </div>
         </CardContent>

@@ -1,5 +1,6 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
+import { HomeIcon, EntriesIcon, MoodIcon, ProfileIcon } from './nav-icons';
 
 interface BottomNavProps {
   className?: string;
@@ -10,7 +11,7 @@ interface BottomNavProps {
 interface NavItem {
   id: 'home' | 'entries' | 'mood' | 'profile';
   label: string;
-  icon: string;
+  icon: React.ComponentType<{ className?: string; size?: number }>;
 }
 
 const BottomNav: React.FC<BottomNavProps> = ({ className, currentView, onViewChange }) => {
@@ -18,22 +19,22 @@ const BottomNav: React.FC<BottomNavProps> = ({ className, currentView, onViewCha
     {
       id: 'home',
       label: 'Home',
-      icon: '🏠',
+      icon: HomeIcon,
     },
     {
       id: 'entries',
       label: 'Entries',
-      icon: '📝',
+      icon: EntriesIcon,
     },
     {
       id: 'mood',
       label: 'Mood',
-      icon: '😊',
+      icon: MoodIcon,
     },
     {
       id: 'profile',
       label: 'Profile',
-      icon: '👤',
+      icon: ProfileIcon,
     },
   ];
 
@@ -61,7 +62,7 @@ const BottomNav: React.FC<BottomNavProps> = ({ className, currentView, onViewCha
                 : 'text-muted-foreground hover:text-foreground',
             )}
           >
-            <span className="text-lg mb-1">{item.icon}</span>
+            <item.icon className="mb-1" size={20} />
             <span className="text-xs font-medium">{item.label}</span>
           </button>
         );

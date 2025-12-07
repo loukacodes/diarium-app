@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { SunIcon, MoonIcon } from '@/components/ui/nav-icons';
 import API_URL from '@/config/api';
 import type { User } from '@/types';
 
@@ -79,7 +80,7 @@ export default function AuthView({ onAuthSuccess, isDarkMode, onToggleDarkMode }
               onClick={onToggleDarkMode}
               className="flex items-center gap-2 order-3 sm:order-3"
             >
-              {isDarkMode ? '☀️' : '🌙'}
+              {isDarkMode ? <SunIcon size={18} /> : <MoonIcon size={18} />}
             </Button>
           </div>
         </CardHeader>
