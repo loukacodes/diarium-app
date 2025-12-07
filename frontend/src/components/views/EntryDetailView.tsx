@@ -2,7 +2,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft } from 'lucide-react';
 import { getWordCount, formatDate, formatConfidence } from '@/utils/helpers';
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import type { Entry } from '@/types';
+
+const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4'];
 
 interface EntryDetailViewProps {
   entry: Entry;
@@ -55,13 +58,40 @@ export default function EntryDetailView({ entry, onBack, onDelete }: EntryDetail
           <p className="text-sm sm:text-base text-foreground whitespace-pre-wrap break-words">
             {entry.content}
           </p>
+          {entry.moods && entry.moods.length > 0 ? (
+            <div className="pt-4 border-t">
+              <h4 className="text-sm font-semibold mb-3 text-muted-foreground">Mood Analysis</h4>
+              <ResponsiveContainer width="100%" height={200}>
+                <PieChart>
+                  <Pie
+                    data={entry.moods.map((m) => ({
+                      name: m.mood.charAt(0).toUpperCase() + m.mood.slice(1),
+                      value: m.confidence * 100,
+                    }))}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, value }) => `${name}: ${formatConfidence(value / 100)}%`}
+                    outerRadius={70}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {entry.moods.map((_, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    formatter={(value: number) => [
+                      `${formatConfidence(value / 100)}%`,
+                      'Confidence',
+                    ]}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          ) : null}
           <div className="flex justify-end pt-4 border-t">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleDelete}
-              className="w-full sm:w-auto"
-            >
+            <Button variant="outline" size="sm" onClick={handleDelete} className="w-full sm:w-auto">
               Delete Entry
             </Button>
           </div>
