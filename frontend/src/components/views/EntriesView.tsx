@@ -1,5 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { getWordCount, formatDate } from '@/utils/helpers';
+import { getWordCount, formatDate, formatConfidence } from '@/utils/helpers';
 import type { Entry } from '@/types';
 
 interface EntriesViewProps {
@@ -8,11 +8,7 @@ interface EntriesViewProps {
   onEntryClick: (entryId: string) => void;
 }
 
-export default function EntriesView({
-  entries,
-  isLoadingEntries,
-  onEntryClick,
-}: EntriesViewProps) {
+export default function EntriesView({ entries, isLoadingEntries, onEntryClick }: EntriesViewProps) {
   return (
     <Card>
       <CardHeader>
@@ -45,11 +41,13 @@ export default function EntriesView({
                 >
                   <CardHeader className="pb-3">
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                      <CardTitle className="text-base sm:text-lg">
+                      <CardTitle className="text-base sm:text-lg text-left">
                         {formatDate(entry.createdAt)}
+                        <div className="text-sm text-muted-foreground text-left">
+                          {getWordCount(entry.content)} words
+                        </div>
                       </CardTitle>
                       <div className="flex items-center gap-3 text-sm text-muted-foreground flex-wrap">
-                        <span>{getWordCount(entry.content)} words</span>
                         {entry.moods && entry.moods.length > 0 ? (
                           <div className="flex items-center gap-2 flex-wrap">
                             {entry.moods.slice(0, 3).map((m, idx) => (
@@ -57,7 +55,7 @@ export default function EntriesView({
                                 key={idx}
                                 className="bg-primary/10 text-primary px-2 py-1 rounded text-xs capitalize"
                               >
-                                {m.mood} ({m.confidence * 100}%)
+                                {m.mood} ({formatConfidence(m.confidence)}%)
                               </span>
                             ))}
                           </div>
@@ -70,7 +68,7 @@ export default function EntriesView({
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-sm sm:text-base text-foreground whitespace-pre-wrap break-words mb-4">
+                    <p className="text-sm sm:text-base text-foreground whitespace-pre-wrap break-words mb-4 text-left">
                       {preview}
                     </p>
                   </CardContent>
@@ -83,4 +81,3 @@ export default function EntriesView({
     </Card>
   );
 }
-
