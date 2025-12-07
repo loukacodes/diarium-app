@@ -265,6 +265,7 @@ export default function MoodView({ entries }: MoodViewProps) {
                         align="center"
                         wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }}
                         iconSize={12}
+                        iconType="circle"
                         formatter={(value, entry) => {
                           const entryValue = entry?.payload?.value ?? 0;
                           const percent = ((entryValue / filteredEntries.length) * 100).toFixed(0);
@@ -309,6 +310,7 @@ export default function MoodView({ entries }: MoodViewProps) {
                         <Legend
                           wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }}
                           iconSize={12}
+                          iconType="circle"
                         />
                         <Line
                           type="monotone"
@@ -357,6 +359,7 @@ export default function MoodView({ entries }: MoodViewProps) {
                         <Legend
                           wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }}
                           iconSize={12}
+                          iconType="circle"
                         />
                         {Object.keys(moodCounts).map((mood, index) => (
                           <Bar
