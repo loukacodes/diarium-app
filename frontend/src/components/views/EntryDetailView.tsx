@@ -1,11 +1,9 @@
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft } from 'lucide-react';
 import { getWordCount, formatDate, formatConfidence } from '@/utils/helpers';
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import type { Entry } from '@/types';
-
-const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4'];
 
 interface EntryDetailViewProps {
   entry: Entry;
@@ -31,7 +29,7 @@ export default function EntryDetailView({ entry, onBack, onDelete }: EntryDetail
           </Button>
         </div>
         <CardTitle className="text-lg sm:text-xl">{formatDate(entry.createdAt)}</CardTitle>
-        <CardDescription className="text-sm sm:text-base">
+        <div className="text-sm sm:text-base text-muted-foreground">
           <div className="flex items-center gap-3 mt-2 flex-wrap">
             <span>{getWordCount(entry.content)} words</span>
             {entry.moods && entry.moods.length > 0 ? (
@@ -51,7 +49,7 @@ export default function EntryDetailView({ entry, onBack, onDelete }: EntryDetail
               </span>
             ) : null}
           </div>
-        </CardDescription>
+        </div>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
@@ -61,33 +59,122 @@ export default function EntryDetailView({ entry, onBack, onDelete }: EntryDetail
           {entry.moods && entry.moods.length > 0 ? (
             <div className="pt-4 border-t">
               <h4 className="text-sm font-semibold mb-3 text-muted-foreground">Mood Analysis</h4>
-              <ResponsiveContainer width="100%" height={200}>
-                <PieChart>
-                  <Pie
+              <div className="w-full overflow-x-auto">
+                <ResponsiveContainer width="100%" height={250} minHeight={200}>
+                  <BarChart
                     data={entry.moods.map((m) => ({
-                      name: m.mood.charAt(0).toUpperCase() + m.mood.slice(1),
-                      value: m.confidence * 100,
+                      mood: m.mood.charAt(0).toUpperCase() + m.mood.slice(1),
+                      confidence: m.confidence * 100,
                     }))}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ name, value }) => `${name}: ${formatConfidence(value / 100)}%`}
-                    outerRadius={70}
-                    fill="#8884d8"
-                    dataKey="value"
+                    margin={{ top: 10, right: 10, left: 0, bottom: 30 }}
                   >
-                    {entry.moods.map((_, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    formatter={(value: number) => [
-                      `${formatConfidence(value / 100)}%`,
-                      'Confidence',
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis
+                      dataKey="mood"
+                      tick={{ fontSize: 11 }}
+                      angle={-45}
+                      textAnchor="end"
+                      height={60}
+                      interval={0}
+                    />
+                    <YAxis
+                      tick={{ fontSize: 11 }}
+                      domain={[0, 100]}
+                      width={40}
+                      label={{ value: '%', angle: -90, position: 'insideLeft', fontSize: 11 }}
+                    />
+                    <Tooltip
+                      formatter={(value: number) => [
+                        `${formatConfidence(value / 100)}%`,
+                        'Confidence',
+                      ]}
+                      contentStyle={{ fontSize: '12px', padding: '8px' }}
+                    />
+                    <Bar dataKey="confidence" fill="#9ca3af" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          ) : null}
+          {entry.temporal ? (
+            <div className="pt-4 border-t">
+              <h4 className="text-sm font-semibold mb-3 text-muted-foreground">Temporal Focus</h4>
+              <div className="w-full overflow-x-auto">
+                <ResponsiveContainer width="100%" height={250} minHeight={200}>
+                  <BarChart
+                    data={[
+                      { name: 'Past', percentage: entry.temporal.past * 100 },
+                      { name: 'Present', percentage: entry.temporal.present * 100 },
+                      { name: 'Future', percentage: entry.temporal.future * 100 },
                     ]}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
+                    margin={{ top: 10, right: 10, left: 0, bottom: 30 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis
+                      dataKey="name"
+                      tick={{ fontSize: 11 }}
+                      angle={-45}
+                      textAnchor="end"
+                      height={60}
+                      interval={0}
+                    />
+                    <YAxis
+                      tick={{ fontSize: 11 }}
+                      domain={[0, 100]}
+                      width={40}
+                      label={{ value: '%', angle: -90, position: 'insideLeft', fontSize: 11 }}
+                    />
+                    <Tooltip
+                      formatter={(value: number) => [
+                        `${formatConfidence(value / 100)}%`,
+                        'Percentage',
+                      ]}
+                      contentStyle={{ fontSize: '12px', padding: '8px' }}
+                    />
+                    <Bar dataKey="percentage" fill="#9ca3af" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          ) : null}
+          {entry.category && Object.keys(entry.category).length > 0 ? (
+            <div className="pt-4 border-t">
+              <h4 className="text-sm font-semibold mb-3 text-muted-foreground">Category Focus</h4>
+              <div className="w-full overflow-x-auto">
+                <ResponsiveContainer width="100%" height={250} minHeight={200}>
+                  <BarChart
+                    data={Object.entries(entry.category).map(([name, value]) => ({
+                      category: name.charAt(0).toUpperCase() + name.slice(1),
+                      percentage: (value as number) * 100,
+                    }))}
+                    margin={{ top: 10, right: 10, left: 0, bottom: 30 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis
+                      dataKey="category"
+                      tick={{ fontSize: 11 }}
+                      angle={-45}
+                      textAnchor="end"
+                      height={60}
+                      interval={0}
+                    />
+                    <YAxis
+                      tick={{ fontSize: 11 }}
+                      domain={[0, 100]}
+                      width={40}
+                      label={{ value: '%', angle: -90, position: 'insideLeft', fontSize: 11 }}
+                    />
+                    <Tooltip
+                      formatter={(value: number) => [
+                        `${formatConfidence(value / 100)}%`,
+                        'Percentage',
+                      ]}
+                      contentStyle={{ fontSize: '12px', padding: '8px' }}
+                    />
+                    <Bar dataKey="percentage" fill="#9ca3af" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
             </div>
           ) : null}
           <div className="flex justify-end pt-4 border-t">

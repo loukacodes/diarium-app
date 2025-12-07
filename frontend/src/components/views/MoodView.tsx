@@ -121,49 +121,89 @@ export default function MoodView({ entries }: MoodViewProps) {
               {/* Mood Distribution Pie Chart */}
               <div>
                 <h3 className="text-lg font-semibold mb-4">Mood Distribution</h3>
-                <ResponsiveContainer width="100%" height={300}>
-                  <PieChart>
-                    <Pie
-                      data={pieData}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={({ name, percent }) =>
-                        `${name} ${percent ? (percent * 100).toFixed(0) : 0}%`
-                      }
-                      outerRadius={80}
-                      fill="#8884d8"
-                      dataKey="value"
-                    >
-                      {pieData.map((_, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
+                <div className="w-full overflow-x-auto">
+                  <ResponsiveContainer width="100%" height={300} minHeight={250}>
+                    <PieChart>
+                      <Pie
+                        data={pieData}
+                        cx="50%"
+                        cy="40%"
+                        labelLine={false}
+                        outerRadius={70}
+                        fill="#8884d8"
+                        dataKey="value"
+                      >
+                        {pieData.map((_, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        formatter={(value: number, name: string, props: any) => [
+                          `${value} (${((value / entries.length) * 100).toFixed(0)}%)`,
+                          name,
+                        ]}
+                        contentStyle={{ fontSize: '12px', padding: '8px' }}
+                      />
+                      <Legend
+                        verticalAlign="bottom"
+                        align="center"
+                        wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }}
+                        iconSize={12}
+                        formatter={(value, entry: any) => {
+                          const percent = ((entry.payload.value / entries.length) * 100).toFixed(0);
+                          return `${value} (${percent}%)`;
+                        }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
               </div>
 
               {/* Mood Over Time Line Chart */}
               {timeSeriesData.length > 0 && (
                 <div>
                   <h3 className="text-lg font-semibold mb-4">Mood Over Time</h3>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <LineChart data={timeSeriesData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="date" />
-                      <YAxis />
-                      <Tooltip />
-                      <Legend />
-                      <Line
-                        type="monotone"
-                        dataKey="moodScore"
-                        stroke="#3b82f6"
-                        name="Mood Score"
-                        strokeWidth={2}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
+                  <div className="w-full overflow-x-auto">
+                    <ResponsiveContainer width="100%" height={250} minHeight={200}>
+                      <LineChart
+                        data={timeSeriesData}
+                        margin={{ top: 10, right: 10, left: 0, bottom: 30 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis
+                          dataKey="date"
+                          tick={{ fontSize: 11 }}
+                          angle={-45}
+                          textAnchor="end"
+                          height={60}
+                          interval="preserveStartEnd"
+                        />
+                        <YAxis
+                          tick={{ fontSize: 11 }}
+                          width={40}
+                          label={{
+                            value: 'Score',
+                            angle: -90,
+                            position: 'insideLeft',
+                            fontSize: 11,
+                          }}
+                        />
+                        <Tooltip contentStyle={{ fontSize: '12px', padding: '8px' }} />
+                        <Legend
+                          wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }}
+                          iconSize={12}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="moodScore"
+                          stroke="#3b82f6"
+                          name="Mood Score"
+                          strokeWidth={2}
+                          dot={{ r: 3 }}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
                 </div>
               )}
 
@@ -171,23 +211,48 @@ export default function MoodView({ entries }: MoodViewProps) {
               {weeklyChartData.length > 0 && (
                 <div>
                   <h3 className="text-lg font-semibold mb-4">Weekly Mood Distribution</h3>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={weeklyChartData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="week" />
-                      <YAxis />
-                      <Tooltip />
-                      <Legend />
-                      {Object.keys(moodCounts).map((mood, index) => (
-                        <Bar
-                          key={mood}
-                          dataKey={mood}
-                          stackId="a"
-                          fill={COLORS[index % COLORS.length]}
+                  <div className="w-full overflow-x-auto">
+                    <ResponsiveContainer width="100%" height={250} minHeight={200}>
+                      <BarChart
+                        data={weeklyChartData}
+                        margin={{ top: 10, right: 10, left: 0, bottom: 30 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis
+                          dataKey="week"
+                          tick={{ fontSize: 11 }}
+                          angle={-45}
+                          textAnchor="end"
+                          height={60}
+                          interval={0}
                         />
-                      ))}
-                    </BarChart>
-                  </ResponsiveContainer>
+                        <YAxis
+                          tick={{ fontSize: 11 }}
+                          width={40}
+                          label={{
+                            value: 'Count',
+                            angle: -90,
+                            position: 'insideLeft',
+                            fontSize: 11,
+                          }}
+                        />
+                        <Tooltip contentStyle={{ fontSize: '12px', padding: '8px' }} />
+                        <Legend
+                          wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }}
+                          iconSize={12}
+                        />
+                        {Object.keys(moodCounts).map((mood, index) => (
+                          <Bar
+                            key={mood}
+                            dataKey={mood}
+                            stackId="a"
+                            fill={COLORS[index % COLORS.length]}
+                            radius={[0, 0, 0, 0]}
+                          />
+                        ))}
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
                 </div>
               )}
             </div>

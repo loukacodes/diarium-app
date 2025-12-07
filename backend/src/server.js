@@ -260,6 +260,8 @@ app.get('/api/entries', authenticateToken, async (req, res) => {
     const entriesWithParsedMoods = entries.map((entry) => ({
       ...entry,
       moods: entry.moods ? JSON.parse(entry.moods) : null,
+      temporal: entry.temporal ? JSON.parse(entry.temporal) : null,
+      category: entry.category ? JSON.parse(entry.category) : null,
     }));
 
     res.json(entriesWithParsedMoods);
@@ -296,10 +298,12 @@ app.get('/api/entries/:id', authenticateToken, async (req, res) => {
       return res.status(403).json({ error: 'Access denied. This entry does not belong to you.' });
     }
 
-    // Parse moods JSON string
+    // Parse moods, temporal, and category JSON strings
     const entryWithParsedMoods = {
       ...entry,
       moods: entry.moods ? JSON.parse(entry.moods) : null,
+      temporal: entry.temporal ? JSON.parse(entry.temporal) : null,
+      category: entry.category ? JSON.parse(entry.category) : null,
     };
 
     res.json(entryWithParsedMoods);
@@ -343,7 +347,7 @@ app.delete('/api/entries/:id', authenticateToken, async (req, res) => {
 // Create new entry
 app.post('/api/entries', authenticateToken, async (req, res) => {
   try {
-    const { content, mood, moods, moodScore } = req.body;
+    const { content, mood, moods, moodScore, temporal, category } = req.body;
 
     // Validate input
     if (!content) {
@@ -357,6 +361,8 @@ app.post('/api/entries', authenticateToken, async (req, res) => {
         mood: mood || null,
         moods: moods ? JSON.stringify(moods) : null, // Store moods as JSON string
         moodScore: moodScore || null,
+        temporal: temporal ? JSON.stringify(temporal) : null, // Store temporal analysis as JSON string
+        category: category ? JSON.stringify(category) : null, // Store category analysis as JSON string
         userId: req.user.userId,
       },
       include: {
@@ -375,6 +381,8 @@ app.post('/api/entries', authenticateToken, async (req, res) => {
       entry: {
         ...entry,
         moods: entry.moods ? JSON.parse(entry.moods) : null, // Parse moods for response
+        temporal: entry.temporal ? JSON.parse(entry.temporal) : null, // Parse temporal for response
+        category: entry.category ? JSON.parse(entry.category) : null, // Parse category for response
       },
     });
   } catch (error) {
@@ -383,7 +391,10 @@ app.post('/api/entries', authenticateToken, async (req, res) => {
 });
 
 // Import mood classifier
-const moodClassifier = require('../ml/moodClassifier');
+// Using hybrid approach: tries Transformers.js first (on-device), falls back to Natural classifier
+// Natural classifier always works offline and provides good results
+const moodClassifier = require('../ml/moodClassifierHybrid');
+const textAnalyzer = require('../ml/textAnalyzer');
 
 // Analyze mood from text
 app.post('/api/analyze-mood', async (req, res) => {
@@ -394,13 +405,18 @@ app.post('/api/analyze-mood', async (req, res) => {
       return res.status(400).json({ error: 'Text is required' });
     }
 
-    // Use Natural model (falls back to keyword matching if model not loaded)
-    const result = moodClassifier.analyze(text);
+    // Use Transformers.js classifier (async, works offline after initial model download)
+    const result = await moodClassifier.analyze(text);
+
+    // Analyze temporal and category
+    const analysis = textAnalyzer.analyze(text);
 
     res.json({
       mood: result.mood, // Primary mood (for backward compatibility)
       confidence: result.confidence,
       moods: result.moods || [{ mood: result.mood, confidence: result.confidence }], // Top 3 moods
+      temporal: analysis.temporal, // Past, present, future distribution
+      category: analysis.category, // Category distribution
     });
   } catch (error) {
     res.status(500).json({ error: error.message });

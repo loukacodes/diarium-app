@@ -9,6 +9,8 @@ export interface Entry {
   mood: string | null;
   moods: MoodResult[] | null; // Top 3 moods with confidence
   moodScore: number | null;
+  temporal: { past: number; present: number; future: number } | null; // Temporal analysis
+  category: Record<string, number> | null; // Category analysis (work, life, school, etc.)
   createdAt: string;
   updatedAt: string;
   userId: string;

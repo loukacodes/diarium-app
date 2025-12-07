@@ -31,7 +31,7 @@ export default function HomeView({ token, onEntrySaved, onViewChange, hasEntry }
       const moodAnalysis = await analyzeMood(diaryEntry);
       const moodScore = moodAnalysis.moods[0]?.confidence || 0.5;
 
-      // Save entry with analyzed moods
+      // Save entry with analyzed moods, temporal, and category
       const response = await fetch(`${API_URL}/api/entries`, {
         method: 'POST',
         headers: {
@@ -43,6 +43,8 @@ export default function HomeView({ token, onEntrySaved, onViewChange, hasEntry }
           mood: moodAnalysis.mood, // Primary mood for backward compatibility
           moods: moodAnalysis.moods, // Top 3 moods
           moodScore: moodScore,
+          temporal: moodAnalysis.temporal, // Temporal analysis
+          category: moodAnalysis.category, // Category analysis
         }),
       });
 

@@ -1,7 +1,12 @@
 import API_URL from '@/config/api';
 import type { MoodResult } from '@/types';
 
-export async function analyzeMood(text: string): Promise<{ mood: string; moods: MoodResult[] }> {
+export async function analyzeMood(text: string): Promise<{
+  mood: string;
+  moods: MoodResult[];
+  temporal?: { past: number; present: number; future: number };
+  category?: Record<string, number>;
+}> {
   try {
     const response = await fetch(`${API_URL}/api/analyze-mood`, {
       method: 'POST',
@@ -19,6 +24,8 @@ export async function analyzeMood(text: string): Promise<{ mood: string; moods: 
     return {
       mood: data.mood,
       moods: data.moods || [{ mood: data.mood, confidence: data.confidence }],
+      temporal: data.temporal,
+      category: data.category,
     };
   } catch (error) {
     console.error('Mood analysis error:', error);
