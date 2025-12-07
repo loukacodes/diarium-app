@@ -1,25 +1,50 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Calendar } from '@/components/ui/calendar';
 import { analyzeMood } from '@/services/moodService';
+import { getWordCount, formatDate, formatConfidence } from '@/utils/helpers';
 import API_URL from '@/config/api';
+import type { Entry } from '@/types';
 
 interface HomeViewProps {
   token: string;
+  entries: Entry[];
   onEntrySaved: (entryId: string) => void;
   onViewChange: (view: 'home' | 'entries' | 'mood' | 'profile') => void;
+  onEntryClick: (entryId: string) => void;
   hasEntry: (date: Date) => boolean;
 }
 
-export default function HomeView({ token, onEntrySaved, onViewChange, hasEntry }: HomeViewProps) {
+export default function HomeView({
+  token,
+  entries,
+  onEntrySaved,
+  onViewChange,
+  onEntryClick,
+  hasEntry,
+}: HomeViewProps) {
   const [diaryEntry, setDiaryEntry] = useState<string>('');
   const [date, setDate] = useState<Date | undefined>(new Date());
 
   const handleDateSelect = (selectedDate: Date | undefined) => {
     setDate(selectedDate);
   };
+
+  // Filter entries for the selected date
+  const entriesForDate = useMemo(() => {
+    if (!date) return [];
+
+    return entries.filter((entry) => {
+      const entryDate = new Date(entry.createdAt);
+      return (
+        entryDate.getFullYear() === date.getFullYear() &&
+        entryDate.getMonth() === date.getMonth() &&
+        entryDate.getDate() === date.getDate()
+      );
+    });
+  }, [date, entries]);
 
   const saveEntry = async () => {
     if (!diaryEntry.trim()) {
@@ -82,7 +107,7 @@ export default function HomeView({ token, onEntrySaved, onViewChange, hasEntry }
             placeholder="How was your day? What are you thinking about?"
             value={diaryEntry}
             onChange={(e) => setDiaryEntry(e.target.value)}
-            className="min-h-[120px] w-full"
+            className="min-h-[250px] w-full"
           />
           <div className="flex justify-end">
             <Button onClick={saveEntry} disabled={!diaryEntry.trim()} className="w-full sm:w-auto">
@@ -105,9 +130,70 @@ export default function HomeView({ token, onEntrySaved, onViewChange, hasEntry }
               hasEntry: 'has-entry',
             }}
           />
+          {date && (
+            <div className="pt-4 border-t">
+              <h3 className="text-sm font-semibold mb-3 text-muted-foreground">
+                Entries for {formatDate(date.toISOString())}
+              </h3>
+              {entriesForDate.length > 0 ? (
+                <div className="space-y-3">
+                  {entriesForDate.map((entry) => {
+                    const preview =
+                      entry.content.length > 150
+                        ? entry.content.substring(0, 150) + '...'
+                        : entry.content;
+
+                    return (
+                      <Card
+                        key={entry.id}
+                        className="hover:shadow-md transition-shadow cursor-pointer"
+                        onClick={() => {
+                          onEntryClick(entry.id);
+                          onViewChange('entries');
+                        }}
+                      >
+                        <CardHeader className="pb-3">
+                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                            <div className="text-sm text-muted-foreground">
+                              {getWordCount(entry.content)} words
+                            </div>
+                            {entry.moods && entry.moods.length > 0 ? (
+                              <div className="flex items-center gap-2 flex-wrap">
+                                {entry.moods.slice(0, 3).map((m, idx) => (
+                                  <span
+                                    key={idx}
+                                    className="bg-primary/10 text-primary px-2 py-1 rounded text-xs capitalize"
+                                  >
+                                    {m.mood} ({formatConfidence(m.confidence)}%)
+                                  </span>
+                                ))}
+                              </div>
+                            ) : entry.mood ? (
+                              <span className="bg-primary/10 text-primary px-2 py-1 rounded text-xs capitalize">
+                                {entry.mood}
+                              </span>
+                            ) : null}
+                          </div>
+                        </CardHeader>
+                        <CardContent>
+                          <p className="text-sm text-foreground whitespace-pre-wrap break-words text-left">
+                            {preview}
+                          </p>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <p className="text-sm">No entries for this date</p>
+                  <p className="text-xs mt-1">Start writing to create your first entry!</p>
+                </div>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
     </>
   );
 }
-

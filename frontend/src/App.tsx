@@ -134,8 +134,10 @@ function App() {
         {currentView === 'home' && (
           <HomeView
             token={token}
+            entries={entries}
             onEntrySaved={handleEntrySaved}
             onViewChange={handleViewChange}
+            onEntryClick={handleEntryClick}
             hasEntry={hasEntry}
           />
         )}
