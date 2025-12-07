@@ -31,6 +31,7 @@ interface MoodViewProps {
 }
 
 export default function MoodView({ entries }: MoodViewProps) {
+  const [activePreset, setActivePreset] = useState<'all' | 7 | 30 | 90 | 'custom'>(30);
   const [dateRange, setDateRange] = useState<DateRange | undefined>(() => {
     // Default to last 30 days
     const end = new Date();
@@ -65,11 +66,33 @@ export default function MoodView({ entries }: MoodViewProps) {
     if (days === null) {
       // All time
       setDateRange(undefined);
+      setActivePreset('all');
     } else {
       const end = new Date();
       const start = new Date();
       start.setDate(start.getDate() - days);
       setDateRange({ from: start, to: end });
+      setActivePreset(days as 7 | 30 | 90);
+    }
+  };
+
+  // Handle custom date range selection
+  const handleDateRangeChange = (range: DateRange | undefined) => {
+    setDateRange(range);
+    // Check if the custom range matches any preset
+    if (!range?.from || !range?.to) {
+      setActivePreset('all');
+      return;
+    }
+    const daysDiff = getDaysDifference(range.from, range.to);
+    if (daysDiff === 6) {
+      setActivePreset(7);
+    } else if (daysDiff === 29) {
+      setActivePreset(30);
+    } else if (daysDiff === 89) {
+      setActivePreset(90);
+    } else {
+      setActivePreset('custom');
     }
   };
   // Process entries for charts (using filtered entries)
@@ -137,46 +160,28 @@ export default function MoodView({ entries }: MoodViewProps) {
           <div className="mb-6 space-y-4">
             <div className="flex flex-wrap gap-2">
               <Button
-                variant={!dateRange ? 'default' : 'outline'}
+                variant={activePreset === 'all' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setPresetRange(null)}
               >
                 All Time
               </Button>
               <Button
-                variant={
-                  dateRange?.from &&
-                  dateRange?.to &&
-                  getDaysDifference(dateRange.from, dateRange.to) === 6
-                    ? 'default'
-                    : 'outline'
-                }
+                variant={activePreset === 7 ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setPresetRange(7)}
               >
                 Last 7 Days
               </Button>
               <Button
-                variant={
-                  dateRange?.from &&
-                  dateRange?.to &&
-                  getDaysDifference(dateRange.from, dateRange.to) === 29
-                    ? 'default'
-                    : 'outline'
-                }
+                variant={activePreset === 30 ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setPresetRange(30)}
               >
                 Last 30 Days
               </Button>
               <Button
-                variant={
-                  dateRange?.from &&
-                  dateRange?.to &&
-                  getDaysDifference(dateRange.from, dateRange.to) === 89
-                    ? 'default'
-                    : 'outline'
-                }
+                variant={activePreset === 90 ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setPresetRange(90)}
               >
@@ -187,7 +192,7 @@ export default function MoodView({ entries }: MoodViewProps) {
               <Calendar
                 mode="range"
                 selected={dateRange}
-                onSelect={setDateRange}
+                onSelect={handleDateRangeChange}
                 numberOfMonths={1}
                 className="rounded-md border"
               />
