@@ -1,5 +1,14 @@
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { ArrowLeft } from 'lucide-react';
 import { getWordCount, formatDate, formatConfidence } from '@/utils/helpers';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
@@ -12,11 +21,20 @@ interface EntryDetailViewProps {
 }
 
 export default function EntryDetailView({ entry, onBack, onDelete }: EntryDetailViewProps) {
-  const handleDelete = async () => {
-    if (confirm('Are you sure you want to delete this entry? This action cannot be undone.')) {
-      await onDelete(entry.id);
-      onBack();
-    }
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+
+  const handleDeleteClick = () => {
+    setShowDeleteDialog(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    await onDelete(entry.id);
+    setShowDeleteDialog(false);
+    onBack();
+  };
+
+  const handleDeleteCancel = () => {
+    setShowDeleteDialog(false);
   };
 
   return (
@@ -178,12 +196,40 @@ export default function EntryDetailView({ entry, onBack, onDelete }: EntryDetail
             </div>
           ) : null}
           <div className="flex justify-end pt-4 border-t">
-            <Button variant="outline" size="sm" onClick={handleDelete} className="w-full sm:w-auto">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleDeleteClick}
+              className="w-full sm:w-auto"
+            >
               Delete Entry
             </Button>
           </div>
         </div>
       </CardContent>
+
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Entry</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this entry? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={handleDeleteCancel}>
+              Cancel
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleDeleteConfirm}
+              className="bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
+            >
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
