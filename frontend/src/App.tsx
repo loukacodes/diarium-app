@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import './App.css';
 import BottomNav from '@/components/ui/bottom-nav';
+import { Toaster } from '@/components/ui/toaster';
 import { useDarkMode } from '@/hooks/useDarkMode';
 import { useAuth } from '@/hooks/useAuth';
 import { useEntries } from '@/hooks/useEntries';
@@ -165,6 +166,9 @@ function App() {
 
       {/* Bottom Navigation - Mobile Only */}
       <BottomNav currentView={currentView} onViewChange={handleViewChange} />
+      
+      {/* Toast Notifications */}
+      <Toaster />
     </div>
   );
 }

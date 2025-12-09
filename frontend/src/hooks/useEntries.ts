@@ -1,8 +1,10 @@
 import { useState, useCallback } from 'react';
+import { useToast } from '@/hooks/useToast';
 import API_URL from '@/config/api';
 import type { Entry } from '@/types';
 
 export function useEntries(token: string | null) {
+  const { toast } = useToast();
   const [entries, setEntries] = useState<Entry[]>([]);
   const [isLoadingEntries, setIsLoadingEntries] = useState<boolean>(false);
   const [selectedEntry, setSelectedEntry] = useState<Entry | null>(null);
@@ -26,7 +28,11 @@ export function useEntries(token: string | null) {
       setEntries(data);
     } catch (error) {
       console.error('Fetch entries error:', error);
-      alert('Failed to load entries. Please try again.');
+      toast({
+        title: 'Failed to load entries',
+        description: 'Please try again.',
+        variant: 'destructive',
+      });
     } finally {
       setIsLoadingEntries(false);
     }
@@ -51,7 +57,11 @@ export function useEntries(token: string | null) {
         setSelectedEntry(data);
       } catch (error) {
         console.error('Fetch entry detail error:', error);
-        alert('Failed to load entry. Please try again.');
+        toast({
+          title: 'Failed to load entry',
+          description: 'Please try again.',
+          variant: 'destructive',
+        });
         setSelectedEntry(null);
       }
     },
@@ -73,9 +83,18 @@ export function useEntries(token: string | null) {
         }
 
         setEntries((prevEntries) => prevEntries.filter((entry) => entry.id !== entryId));
+        toast({
+          title: 'Entry deleted',
+          description: 'The entry has been deleted successfully.',
+          variant: 'success',
+        });
       } catch (error) {
         console.error('Delete entry error:', error);
-        alert('Failed to delete entry. Please try again.');
+        toast({
+          title: 'Failed to delete entry',
+          description: 'Please try again.',
+          variant: 'destructive',
+        });
         throw error;
       }
     },

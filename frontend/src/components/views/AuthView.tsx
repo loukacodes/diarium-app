@@ -3,7 +3,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Toaster } from '@/components/ui/toaster';
 import { SunIcon, MoonIcon } from '@/components/ui/nav-icons';
+import { useToast } from '@/hooks/useToast';
 import API_URL from '@/config/api';
 import type { User } from '@/types';
 
@@ -14,6 +16,7 @@ interface AuthViewProps {
 }
 
 export default function AuthView({ onAuthSuccess, isDarkMode, onToggleDarkMode }: AuthViewProps) {
+  const { toast } = useToast();
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const [authForm, setAuthForm] = useState({
     name: '',
@@ -49,9 +52,20 @@ export default function AuthView({ onAuthSuccess, isDarkMode, onToggleDarkMode }
 
       // Clear form
       setAuthForm({ name: '', email: '', password: '' });
+      
+      // Show success message
+      toast({
+        title: authMode === 'login' ? 'Login successful' : 'Registration successful',
+        description: `Welcome back, ${data.user.name}!`,
+        variant: 'success',
+      });
     } catch (error) {
       console.error('Auth error:', error);
-      alert(`Authentication failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      toast({
+        title: 'Authentication failed',
+        description: error instanceof Error ? error.message : 'Unknown error occurred',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -168,6 +182,7 @@ export default function AuthView({ onAuthSuccess, isDarkMode, onToggleDarkMode }
           </Tabs>
         </CardContent>
       </Card>
+      <Toaster />
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Calendar } from '@/components/ui/calendar';
+import { useToast } from '@/hooks/useToast';
 import { analyzeMood } from '@/services/moodService';
 import { getWordCount, formatDate, formatConfidence, calculateStreak } from '@/utils/helpers';
 import { FlameIcon } from '@/components/ui/nav-icons';
@@ -26,6 +27,7 @@ export default function HomeView({
   onEntryClick,
   hasEntry,
 }: HomeViewProps) {
+  const { toast } = useToast();
   const [diaryEntry, setDiaryEntry] = useState<string>('');
   const [date, setDate] = useState<Date | undefined>(new Date());
 
@@ -90,9 +92,20 @@ export default function HomeView({
       // Notify parent to refresh entries and switch view
       onEntrySaved(savedEntryId);
       onViewChange('entries');
+      
+      // Show success message
+      toast({
+        title: 'Entry saved',
+        description: 'Your diary entry has been saved successfully.',
+        variant: 'success',
+      });
     } catch (error) {
       console.error('Save entry error:', error);
-      alert('Failed to save entry. Please try again.');
+      toast({
+        title: 'Failed to save entry',
+        description: 'Please try again.',
+        variant: 'destructive',
+      });
     }
   };
 
