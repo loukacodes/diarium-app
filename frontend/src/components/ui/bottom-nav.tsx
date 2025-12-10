@@ -41,7 +41,7 @@ const BottomNav: React.FC<BottomNavProps> = ({ className, currentView, onViewCha
   return (
     <nav
       className={cn(
-        'fixed bottom-0 left-0 right-0 bg-background border-t border-border',
+        'fixed bottom-0 left-0 right-0 bg-background border-t border-border z-10',
         'flex items-center justify-around py-2 px-4',
         'sm:hidden', // Only show on mobile
         className,
