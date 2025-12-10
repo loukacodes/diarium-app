@@ -9,7 +9,7 @@ Diarium is a web-based diary app that helps users reflect on their daily lives w
 ## 📌 Features
 
 ### Core Features
-- **Write, edit, and delete diary entries** with rich text support
+- **Write, and delete diary entries** with rich text support
 - **Automatic mood detection** via AI with confidence scores
 - **Temporal analysis** - Detects if entries focus on past, present, or future
 - **Category analysis** - Identifies themes (work, school, relationship, family, self, society, goals, life)
